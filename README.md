@@ -19,6 +19,7 @@ python3 mkchal/mkchal.py
 
 ### After mkchal.py
 
+- Run `git checkout -b name_challname` to switch to a branch if you havent already.
 - Put your challenge files in `[challname]/src`
 - Put your writeup in `[challname]/README.md`
 - Put your files that will be given to others in `[challname]/dist`
@@ -26,4 +27,7 @@ python3 mkchal/mkchal.py
 - Modify the `[challname]/deploy/docker-compose.yml` file to your needs
 - Modify the `[challname]/run.sh` file to however your challenge will be deployed.
 - A fake flag has been generated in `dist/flag.txt`, move it to where the flag would be, or delete it if the flag is not necessary in dist.
+
+### After verifying your challenge works
+ - Push your changes and make a pull request to the ctf repo. 
 

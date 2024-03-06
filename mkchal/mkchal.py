@@ -1,13 +1,10 @@
-import argparse
-import git
-import string
-
 from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 from json import loads, dumps
 from rich.console import Console
+from os.path import isdir
 
 
 class Type(str, Enum):
@@ -336,6 +333,27 @@ class ChallengeManager:
             f.write('## Add your writeup here!')
         __import__("time").sleep(2)
         console.print("\nDone.", style="bold red")
+
+    @staticmethod
+    def check_name_exists(name, type):
+        tld = Path.cwd()
+        if type == "1":
+            type = "rev"
+        elif type == "2":
+            type = "pwn"
+        elif type == "3":
+            type = "crypto"
+        elif type == "4":
+            type = "web"
+        elif type == "5":
+            type = "misc"
+        elif type == "6":
+            type = "blockchain"
+        elif type == "7":
+            type = "osint"
+        if (tld / type / name).exists():
+            return True
+        return False
         
 
 
@@ -367,13 +385,18 @@ if __name__ == "__main__":
         console.print("[bold cyan]>[/bold cyan] osint (7)", style="bold green")
         console.print("Input [1-7]", style="blue")
         type = input()
-        if res not in ["1", "2", "3", "4", "5", "6", "7"]:
+        if type not in ["1", "2", "3", "4", "5", "6", "7"]:
             console.print("Invalid input", style="bold red")
             exit(1)
         console.clear()
         console.print("[bold blue]Challenge Name?")
         name = input()
         console.clear()
+        while (ChallengeManager.check_name_exists(name, type)):
+            console.print("Challenge with name already exists", style="bold red")
+            console.print("[blue]New challenge Name?")
+            name = input()
+            console.clear()
         console.print("[bold blue]Challenge Author?")
         author = input()
         console.clear()
