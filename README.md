@@ -1,4 +1,4 @@
-# ctf-template2
+# ctf-name-here
 New age CTF Template (WIP)
 
 ## Setup
