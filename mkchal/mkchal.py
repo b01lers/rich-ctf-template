@@ -7,8 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 from json import loads, dumps
-from pprint import pformat, pprint
-from shutil import copy
+from rich.console import Console
 
 
 class Type(str, Enum):
@@ -19,6 +18,8 @@ class Type(str, Enum):
     CRYPTO = "crypto"
     WEB = "web"
     MISC = "misc"
+    BLOCKCHAIN = "blockchain"
+    OSINT = "osint"
 
 
 class DeployType(str, Enum):
@@ -48,176 +49,414 @@ class ChallengeManager:
     def __init__(self) -> None:
         self.challenges: List[Challenge] = []
 
-    def getRepo(self, path: Optional[Path] = None) -> Path:
-        """
-        Returns the top-level repository directory.
+    @staticmethod
+    def create_rev(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating rev challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "rev"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2) # scuffed way to make sure stuff worked
+        console.print("\nDone.", style="bold red")
 
-        :param path: Optionally, the provided path to search in. Defaults to CWD.
-        :returns: A path to the directory containing `.git`.
-        """
-        if path is None:
-            path = Path.cwd()
+    @staticmethod
+    def create_pwn(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating pwn challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "pwn"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2) # scuffed way to make sure stuff worked
+        console.print("\nDone.", style="bold red")
 
-        repo = git.Repo(path, search_parent_directories=True)
-        return Path(repo.working_dir)
+    @staticmethod
+    def create_crypto(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating crypto challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "crypto"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2) # scuffed way to make sure stuff worked
+        console.print("\nDone.", style="bold red")
 
-    def createChallenge(self, challenge: Challenge) -> None:
-        """
-        Creates a new challenge.
+    @staticmethod
+    def create_web(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating web challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "web"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2) # scuffed way to make sure stuff worked
+        console.print("\nDone.", style="bold red")
 
-        :param challenge: The challenge to create.
-        """
-        tld = self.getRepo()
-        cld = tld / challenge.type.value
-        if not cld.exists():
-            cld.mkdir()
+    @staticmethod
+    def create_misc(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating misc challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "misc"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2) # scuffed way to make sure stuff worked
+        console.print("\nDone.", style="bold red")
 
-        chal_dir = cld / challenge.name
-        if not chal_dir.exists():
-            chal_dir.mkdir()
+    @staticmethod
+    def create_blockchain(name, author, description, difficulty, flag, deploy):
+        deploy = True if deploy == "y" else False
+        console = Console()
+        console.print("Creating blockchain challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "blockchain"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "src").mkdir(exist_ok=True)
+        (challenge / "deploy" ).mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": deploy
+            }, indent=4))
+        with open(challenge / "run.sh", "w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd ./deploy\n")
+            f.write("sudo docker-compose up --build -d\n")
+        with open(challenge / "deploy" / "Dockerfile", "w") as f:
+            f.write("#put your dockerfile contents here\n")
+        with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
+            f.write("#put your docker-compose contents here\n")
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "dist" / "flag.txt" , "w") as f:
+            f.write('fake{flag}')
+        __import__("time").sleep(2)
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        console.print("\nDone.", style="bold red")
 
-        with (chal_dir / "chal.json").open("w") as f:
-            f.write(dumps(challenge.__dict__, indent=4, sort_keys=True))
-
-        if challenge.remote is not None:
-            (chal_dir / "deploy").mkdir()
-            with (chal_dir / "deploy.sh").open("w") as f:
-                f.write(f"#!/bin/bash\n{' '.join(challenge.remote)}")
-            templates_to_write = {}
-            for template in (
-                Path(__file__).with_name("templates") / "deploy"
-            ).iterdir():
-                with template.open("r") as f:
-                    templates_to_write[template.name] = f.read()
-
-            all_formatters = {
-                "name": challenge.name,
-                "dist_path": str(chal_dir / "dist"),
-                "port": str(challenge.ports[0]),
-            }
-            for template_name, template_content in templates_to_write.items():
-                with (chal_dir / "deploy" / template_name).open("w") as f:
-
-                    formatters = {
-                        t[1]: all_formatters[t[1]]
-                        for t in string.Formatter().parse(template_content)
-                        if t[1] is not None
-                    }
-                    f.write(
-                        template_content.format(
-                            **formatters
-                        )
-                    )
-
-        (chal_dir / "solve").mkdir()
-        with (chal_dir / "solve" / "flag.txt").open("w") as f:
-            f.write(challenge.flag)
-        (chal_dir / "src").mkdir()
-        with (chal_dir / "src" / "Makefile").open("w") as f:
-            f.write(
-                "CC=\n"
-                "CXX=\n"
-                "CFLAGS=\n"
-                "CXXFLAGS=\n"
-                "LDFLAGS=\n"
-                "\n"
-                f"all: {challenge.name}\n"
-                "\n"
-                f"{challenge.name}: {challenge.name}.c\n"
-                "\t$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^\n"
-            )
-
-        (chal_dir / "dist").mkdir()
+    @staticmethod
+    def create_osint(name, author, description, difficulty, flag):
+        console = Console()
+        console.print("Creating osint challenge", style="bold green")
+        tld = Path.cwd()
+        rev = tld / "osint"
+        rev.mkdir(exist_ok=True)
+        challenge = rev / name
+        challenge.mkdir(exist_ok=True)
+        (challenge / "dist").mkdir(exist_ok=True)
+        (challenge / "chal.json").touch()
+        with open(challenge / "chal.json", "w") as f:
+            f.write(dumps({
+                "name": name,
+                "author": author,
+                "description": description,
+                "difficulty": difficulty,
+                "flag": flag,
+                "ports": [],
+                "can_be_auto_deployed": False
+            }, indent=4))
+        with open(challenge / "flag.txt" , "w") as f:
+            f.write(flag)
+        with open(challenge / "README.md" , "w") as f:
+            f.write(f'# Writeup for {name} by {author}')
+            f.write('\n\n')
+            f.write('## Add your writeup here!')
+        __import__("time").sleep(2)
+        console.print("\nDone.", style="bold red")
+        
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Create a CTF challenge.")
-    parser.add_argument(
-        "--type",
-        "-t",
-        type=Type,
-        required=True,
-        choices=[c.value for c in Type],
-        help="The type of the challenge.",
-    )
-    parser.add_argument(
-        "--name",
-        "-n",
-        type=str,
-        required=True,
-        help="The name of the challenge. Example: `a_creative_name`",
-    )
-    parser.add_argument(
-        "--author",
-        "-a",
-        type=str,
-        required=True,
-        help="The author's name. Example: `you`",
-    )
-    parser.add_argument(
-        "--description",
-        "-d",
-        nargs="+",
-        type=str,
-        required=True,
-        help="The description of the challenge. Example: `This is a description...good luck!",
-    )
-    parser.add_argument(
-        "--difficulty",
-        "-D",
-        choices=["Easy", "Medium", "Hard"],
-        required=True,
-        help="The difficulty level of the challenge."
-    )
-    parser.add_argument(
-        "--flag",
-        "-f",
-        type=str,
-        required=True,
-        help="The flag for the challenge. Example: `flag{flag!}`",
-    )
-    parser.add_argument(
-        "--provides",
-        "-p",
-        nargs="+",
-        type=Path,
-        required=True,
-        help="The paths to files that the challenge provides. Example: `dist/chal dist/chal.tar.gz`",
-    )
-    parser.add_argument(
-        "--ports",
-        "-P",
-        nargs="+",
-        type=int,
-        required=True,
-        help="The ports that the challenge provides. Example: 1337 1338",
-    )
-    parser.add_argument(
-        "--remote",
-        "-r",
-        nargs="+",
-        type=str,
-        required=False,
-        default=None,
-        help=(
-            "The command to run from the challenge directory to deploy."
-            "Example: `docker-compose --project_name chal up --build`"
-        ),
-    )
-    args = parser.parse_args()
+    console = Console()
+    console.clear()
+    console.print("> Build ctf challenge direcory structure [Use when setting up repo] (1)", style="red")
+    console.print("> Make challenge [Builds a template for your challenge] (2)", style="bold blue")
+    console.print("Input 1 or 2", style="blue")
+    res = input()
+    if res == "1":
+        console.print("Building ctf challenge directory structure", style="bold green")
+        tld = Path.cwd()
+        with console.status("Building ctf challenge directory structure") as status:
+            for challenge_type in Type:
+                (tld / challenge_type.value).mkdir(exist_ok=True)
+                console.log(f"{challenge_type.name} dir made")
+        console.print("Done.", style="bold red")
+        exit(0)
+    elif res == "2":
+        console.clear()
+        console.print("[bold blue]Challenge Type?")
+        console.print("[bold cyan]>[/bold cyan] rev (1)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] pwn (2)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] crypto (3)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] web (4)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] misc (5)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] blockchain (6)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] osint (7)", style="bold green")
+        console.print("Input [1-7]", style="blue")
+        type = input()
+        if res not in ["1", "2", "3", "4", "5", "6", "7"]:
+            console.print("Invalid input", style="bold red")
+            exit(1)
+        console.clear()
+        console.print("[bold blue]Challenge Name?")
+        name = input()
+        console.clear()
+        console.print("[bold blue]Challenge Author?")
+        author = input()
+        console.clear()
+        console.print("[bold blue]Challenge Description?")
+        description = input()
+        console.clear()
+        console.print("[bold blue]Challenge Difficulty?")
+        console.print("[bold cyan]>[/bold cyan] easy (1)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] easy-medium (2)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] medium (3)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] medium-hard (4)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] hard (5)", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] impossible? (6)", style="bold red")
+        difficulty = input()
+        if difficulty not in ["1", "2", "3", "4", "5", "6"]:
+            console.print("Invalid input", style="bold red")
+            exit(1)
+        if difficulty == "6":
+            console.print("You're not that good", style="bold red")
+            exit(1)
+        if difficulty == "1":
+            difficulty = "easy"
+        elif difficulty == "2":
+            difficulty = "easy-medium"
+        elif difficulty == "3":
+            difficulty = "medium"
+        elif difficulty == "4":
+            difficulty = "medium-hard"
+        elif difficulty == "5":
+            difficulty = "hard"
 
-    c = Challenge(
-        type=args.type,
-        name=args.name,
-        author=args.author,
-        description=" ".join(args.description),
-        difficulty=args.difficulty,
-        flag=args.flag,
-        provides=list(map(str, args.provides)),
-        ports=args.ports,
-        remote=args.remote,
-    )
+        console.clear()
+        console.print("[bold blue]Challenge Flag?")
+        flag = input()
+        console.clear()
+        console.print("[bold blue]Can your challenge be deployed directly from a docker-compose file? (y/n)")
+        deploy = input()
+        if deploy not in ["y", "n"]:
+            console.print("Invalid input", style="bold red")
+            exit(1)
+        if type == "1":
+            console.print("[bold blue]Use a template? (This does nothing for now, select 3)")
+            console.print("[bold cyan]>[/bold cyan] C (1)", style="bold green")
+            console.print("[bold cyan]>[/bold cyan] Rust (2)", style="bold green")
+            console.print("[bold cyan]>[/bold cyan] No Template (3)", style="green")
+            template = input()
+            if template not in ["1", "2", "3"]:
+                console.print("Invalid input", style="bold red")
+                exit(1)
+            with console.status("[blue]Building Rev Challenge...", spinner='bouncingBar') as status:
+                ChallengeManager.create_rev(name, author, description, difficulty, flag, deploy)
+        elif type == "2":
+            with console.status("[blue]Building Pwn Challenge...", spinner='bouncingBar') as status:
+                ChallengeManager.create_pwn(name, author, description, difficulty, flag, deploy)
+        elif type == "3":
+            with console.status("[blue]Building Crypto Challenge...", spinner='moon') as status:
+                ChallengeManager.create_crypto(name, author, description, difficulty, flag, deploy)
+        elif type == "4":
+            console.print("[bold blue]Use a template? (This does nothing for now, select 3)")
+            console.print("[bold cyan]>[/bold cyan] PHP (1)", style="bold green")
+            console.print("[bold cyan]>[/bold cyan] Flask (2)", style="bold green")
+            console.print("[bold cyan]>[/bold cyan] No Template (3)", style="green")
+            template = input()
+            if template not in ["1", "2", "3"]:
+                console.print("Invalid input", style="bold red")
+                exit(1)
+            console.clear()
+            with console.status("[blue]Building Web Challenge...", spinner='moon') as status:
+                ChallengeManager.create_web(name, author, description, difficulty, flag, deploy)
+        elif type == "5":
+            with console.status("[blue]Building Misc Challenge...", spinner='bouncingBar') as status:
+                ChallengeManager.create_misc(name, author, description, difficulty, flag, deploy)
+        elif type == "6":
+            with console.status("[blue]Building Blockchain Challenge...", spinner='line') as status:
+                ChallengeManager.create_blockchain(name, author, description, difficulty, flag, deploy)
+        elif type == "7":
+            with console.status("[blue]Building Osint Challenge...", spinner='dots12') as status:
+                ChallengeManager.create_osint(name, author, description, difficulty, flag)
+        else:
+            console.print("What did u do?", style="bold red")
+        console.print(f"Run `git checkout -b {author}_{name}` to switch to a branch and please read README.md for the next steps.", style="blue")
 
-    cm = ChallengeManager()
-    cm.createChallenge(c)
-    print(f"Done. Run `git checkout -b {args.type}_{args.name}` to switch to a branch and start working.")
+
+        
+    else:
+        console.print("Invalid input", style="bold red")
