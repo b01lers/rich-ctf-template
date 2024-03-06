@@ -29,5 +29,6 @@ python3 mkchal/mkchal.py
 - A fake flag has been generated in `dist/flag.txt`, move it to where the flag would be, or delete it if the flag is not necessary in dist.
 
 ### After verifying your challenge works
- - Push your changes and make a pull request to the ctf repo. 
+ - Push your changes and make a pull request to the ctf repo using the branch given in
+ the final output of mkchal.py
 
