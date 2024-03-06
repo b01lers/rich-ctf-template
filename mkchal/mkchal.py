@@ -47,7 +47,7 @@ class ChallengeManager:
         self.challenges: List[Challenge] = []
 
     @staticmethod
-    def create_rev(name, author, description, difficulty, flag, deploy):
+    def create_rev(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating rev challenge", style="bold green")
@@ -67,7 +67,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -77,7 +77,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -90,7 +90,7 @@ class ChallengeManager:
         console.print("\nDone.", style="bold red")
 
     @staticmethod
-    def create_pwn(name, author, description, difficulty, flag, deploy):
+    def create_pwn(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating pwn challenge", style="bold green")
@@ -110,7 +110,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -120,7 +120,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -133,7 +133,7 @@ class ChallengeManager:
         console.print("\nDone.", style="bold red")
 
     @staticmethod
-    def create_crypto(name, author, description, difficulty, flag, deploy):
+    def create_crypto(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating crypto challenge", style="bold green")
@@ -153,7 +153,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -163,7 +163,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -176,7 +176,7 @@ class ChallengeManager:
         console.print("\nDone.", style="bold red")
 
     @staticmethod
-    def create_web(name, author, description, difficulty, flag, deploy):
+    def create_web(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating web challenge", style="bold green")
@@ -196,7 +196,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -206,7 +206,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -219,7 +219,7 @@ class ChallengeManager:
         console.print("\nDone.", style="bold red")
 
     @staticmethod
-    def create_misc(name, author, description, difficulty, flag, deploy):
+    def create_misc(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating misc challenge", style="bold green")
@@ -239,7 +239,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -249,7 +249,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -262,7 +262,7 @@ class ChallengeManager:
         console.print("\nDone.", style="bold red")
 
     @staticmethod
-    def create_blockchain(name, author, description, difficulty, flag, deploy):
+    def create_blockchain(name, author, description, difficulty, flag, deploy, ports=[]):
         deploy = True if deploy == "y" else False
         console = Console()
         console.print("Creating blockchain challenge", style="bold green")
@@ -282,7 +282,7 @@ class ChallengeManager:
                 "description": description,
                 "difficulty": difficulty,
                 "flag": flag,
-                "ports": [],
+                "ports": ports,
                 "can_be_auto_deployed": deploy
             }, indent=4))
         with open(challenge / "run.sh", "w") as f:
@@ -292,7 +292,7 @@ class ChallengeManager:
         with open(challenge / "deploy" / "Dockerfile", "w") as f:
             f.write("#put your dockerfile contents here\n")
         with open(challenge / "deploy" / "docker-compose.yml", "w") as f:
-            f.write("#put your docker-compose contents here\n")
+            f.write("#put your docker-compose contents here and link the docker's port with your chosen external port!\n")
         with open(challenge / "flag.txt" , "w") as f:
             f.write(flag)
         with open(challenge / "dist" / "flag.txt" , "w") as f:
@@ -434,6 +434,19 @@ if __name__ == "__main__":
         console.clear()
         console.print("[bold blue]Can your challenge be deployed directly from a docker-compose file? (y/n)")
         deploy = input()
+        console.clear()
+        console.print("[bold blue]Ports? Please provide in the format port1,port2,port3...")
+        console.print("[bold cyan]>[/bold cyan] rev [3000-3999]", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] pwn [4000-4999]", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] crypto [5000-5999]", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] web [6000-6999]", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] misc [7000-7999]", style="bold green")
+        console.print("[bold cyan]>[/bold cyan] blockchain [8000-8999]", style="bold green")
+        console.print("[green]Ports? If no port just press enter")
+        ports = input()
+        if ports:
+            ports = [int(x) for x in ports.split(",")]
+            #check if port exists
         if deploy not in ["y", "n"]:
             console.print("Invalid input", style="bold red")
             exit(1)
@@ -447,13 +460,13 @@ if __name__ == "__main__":
                 console.print("Invalid input", style="bold red")
                 exit(1)
             with console.status("[blue]Building Rev Challenge...", spinner='bouncingBar') as status:
-                ChallengeManager.create_rev(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_rev(name, author, description, difficulty, flag, deploy, ports)
         elif type == "2":
             with console.status("[blue]Building Pwn Challenge...", spinner='bouncingBar') as status:
-                ChallengeManager.create_pwn(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_pwn(name, author, description, difficulty, flag, deploy, ports)
         elif type == "3":
             with console.status("[blue]Building Crypto Challenge...", spinner='moon') as status:
-                ChallengeManager.create_crypto(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_crypto(name, author, description, difficulty, flag, deploy, ports)
         elif type == "4":
             console.print("[bold blue]Use a template? (This does nothing for now, select 3)")
             console.print("[bold cyan]>[/bold cyan] PHP (1)", style="bold green")
@@ -465,16 +478,16 @@ if __name__ == "__main__":
                 exit(1)
             console.clear()
             with console.status("[blue]Building Web Challenge...", spinner='moon') as status:
-                ChallengeManager.create_web(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_web(name, author, description, difficulty, flag, deploy, ports)
         elif type == "5":
             with console.status("[blue]Building Misc Challenge...", spinner='bouncingBar') as status:
-                ChallengeManager.create_misc(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_misc(name, author, description, difficulty, flag, deploy, ports)
         elif type == "6":
             with console.status("[blue]Building Blockchain Challenge...", spinner='line') as status:
-                ChallengeManager.create_blockchain(name, author, description, difficulty, flag, deploy)
+                ChallengeManager.create_blockchain(name, author, description, difficulty, flag, deploy, ports)
         elif type == "7":
             with console.status("[blue]Building Osint Challenge...", spinner='dots12') as status:
-                ChallengeManager.create_osint(name, author, description, difficulty, flag)
+                ChallengeManager.create_osint(name, author, description, difficulty, flag, ports)
         else:
             console.print("What did u do?", style="bold red")
         console.print(f"Run `git checkout -b {author}_{name}` to switch to a branch and please read README.md for the next steps.", style="blue")
