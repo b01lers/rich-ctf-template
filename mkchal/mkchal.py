@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from re import match
+from re import match, sub
 from pathlib import Path
 from json import dumps
 from secrets import token_hex
@@ -15,7 +15,7 @@ type2: [...],
 """
 loaded_challs = {}
 context = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEBUG = True #TODO Change this to false when script is done
+DEBUG = False
 
 class ChallengeType(str, Enum):
     """Describes a CTF challenge type."""
@@ -80,9 +80,21 @@ class ChallengeUtils:
         return {}
     
     @staticmethod
-    def generate_service_name(challenge: Challenge) -> str:
+    def generate_service_name(name: str) -> str:
         """Ensures uniqueness between challenge service names"""
-        return f"{challenge.name}-{token_hex(16)}"
+        return f"{name}-{token_hex(16)}"
+    
+    @staticmethod
+    def generate_file_content(filename: Path, kwargs: dict) -> str:
+        """generates the sample file content for a template file"""
+
+        return filename.read_text().format(**kwargs)
+    
+    @staticmethod
+    def safe_name(name: str) -> str:
+        """Creates a safe name for docker services"""
+        
+        return sub(r"^-+|-+$", "", sub(r"[^a-z0-9-]", "", name.lower()))
     
     @staticmethod
     def __generate_defaults(challenge_obj: Challenge, challenge: Path) -> None:
@@ -97,23 +109,22 @@ class ChallengeUtils:
 
     @staticmethod
     def __generate_deployments(challenge_obj: Challenge, challenge: Path) -> None:
-        if not challenge_obj.deploy == DeployType.NO_DEPLOY:
+        if challenge_obj.deploy != DeployType.NO_DEPLOY:
             (challenge / "deploy").mkdir(parents=True, exist_ok=DEBUG)
-        if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
-            (challenge / "deploy" / "Dockerfile").touch(exist_ok=DEBUG)
-            (challenge / "deploy" / "docker-compose.yml").touch(exist_ok=DEBUG)
-            (challenge / "deploy" / "wrapper.sh").touch(exist_ok=DEBUG)
-            (challenge / "run.sh").write_text("#!/bin/bash\ncd ../deploy && sudo docker-compose up -d --build")
-        elif challenge_obj.deploy == DeployType.KLODD:
-            (challenge / "deploy" / "Dockerfile").touch(exist_ok=DEBUG)
-            (challenge / "deploy" / "challenge.yml").touch(exist_ok=DEBUG)
-            (challenge / "deploy" / "wrapper.sh").touch(exist_ok=DEBUG)
-            (challenge / "run.sh").write_text("#!/bin/bash\ncd ../deploy && kubectl create -f challenge.yml")
+            (challenge / "deploy" / "Dockerfile").write_text(challenge_obj.gen_dockerfile())
+            (challenge / "deploy" / "wrapper.sh").write_text(challenge_obj.gen_wrapper())
+            if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
+                (challenge / "deploy" / "docker-compose.yml").write_text(challenge_obj.gen_docker_compose())
+                (challenge / "src" / "sample.py").write_text(challenge_obj.gen_sample_py())
+                (challenge / "run.sh").write_text("#!/bin/bash\ncd deploy && sudo docker-compose up -d --build")
+            elif challenge_obj.deploy == DeployType.KLODD:
+                (challenge / "deploy" / "challenge.yml").write_text(challenge_obj.gen_klodd_challenge())
+                (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && docker build . -t{ChallengeUtils.safe_name(challenge_obj.name)} && docker push {challenge_obj.registry}/{ChallengeUtils.safe_name(challenge_obj.name)} && kubectl create -f challenge.yml")
 
 class Challenge:
     """Represents a challenge object"""
 
-    __slots__ = ["name", "author", "description", "flag", "type", "deploy", "ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags", "difficulty", "auto"]
+    __slots__ = ["name", "author", "description", "flag", "type", "deploy", "ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags", "difficulty", "auto", "registry"]
     optional_fields = ["ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags", "difficulty"]
     
     def __init__(self, name: str, author: str, description: str, flag: str, type: ChallengeType, deploy: DeployType, auto:bool=False) -> None:
@@ -132,6 +143,7 @@ class Challenge:
         self.prereqs = None
         self.tags = None
         self.difficulty = None
+        self.registry = "localhost:5000"
     
     def to_json(self) -> dict:
         """converts a challenge to its valid chal.json output"""
@@ -149,6 +161,8 @@ class Challenge:
         return d
     
     def gen_readme(self) -> str:
+        """Generates a README.md with instructions on how to setup the directory"""
+
         ret = f"""# __{self.name}__ by __{self.author}__ \
         \n## Directory Structure \
         \n``` \
@@ -172,36 +186,98 @@ class Challenge:
             ret += """\n └── run.sh ── what will be run to deploy your challenge"""
         ret += """\n```"""
         ret += f"""\n## Quickstart to challenge development 
-Make sure you develop your challenge on a new branch. You can create one with `git checkout -b {self.name}-{self.author}`"""
+Make sure you develop your challenge on a new branch. You can create one with
+```bash
+git checkout -b {self.name}-{self.author}
+```"""
         if self.deploy == DeployType.DOCKER_COMPOSE:
-            ret += f"""\n### {self.name}/deploy \
-            \nThe deploy folder contains `Dockerfile`, `docker-compose.yml` and `wrapper.sh` files. The sample `Dockerfile` is for a simple tcp challenge servable through \
-netcat. This setup is perfect for basic pwn, rev, or crypto challenges that need a deployment. The sample `docker-compose.yml` contains deployment steps \
-for your challenge. `wrapper.sh` is a sample script which will be served by socat in the `Dockerfile`. The deployment files can and (most likely) will be changed by you. 
+            ret += f"""\n### {self.name}/deploy
+The sample deploy folder contains
+ - `Dockerfile`: A basic setup for a TCP challenge, making it accessible via netcat.
+ - `docker-compose.yml`: Defines deployment steps for the challenge.
+ - `wrapper.sh`: Wraps the executable by `cd`ing to the correct directory
 
-If you are creating a pwn challenge, or any challenge where the competitor might get RCE, it is required to instance your challenge through either \
-[nsjail](https://github.com/google/nsjail), or [redpwn jail](https://github.com/redpwn/jail)."""
+This setup is well-suited for pwn, reverse engineering, and cryptography challenges requiring a hosted service.
+
+In most cases you will have to modify these files to fit your challenge.
+
+If your challenge allows Remote Code Execution (RCE), it must be sandboxed using either:
+ - [nsjail](https://github.com/google/nsjail)
+ - [redpwn jail](https://github.com/redpwn/jail).
+"""
         if self.deploy == DeployType.KLODD:
-            ret += f"""\n### {self.name}/deploy \
-            \nThe deploy folder contains `Dockerfile`, `challenge.yml` files. The sample `Dockerfile` is for a simple webserver that will be instanced \
-using [klodd](https://klodd.tjcsec.club/). `application.yml` contains the necessary klodd deployment information. If you are unfamiliar with klodd deployments please don't change anything and \
-ask in the ctf developer channel."""
+            ret += f"""\n### {self.name}/deploy
+The sample deploy folder contains
+- `Dockerfile`: A simple webserver setup designed for deployment with Klodd.
+- `challenge.yml`: Configuration file defining Klodd deployment settings.
+If you're new to Klodd, avoid modifying these files without checking with the CTF developers.
+"""
             
-        ret += f"""\n### {self.name}/dist \
-        \nThe dist folder is for files to be given to the competitors. If you have more than one distribution file, please place them in a zip or archive folder. \
-        \n### {self.name}/solve \
-        \nThe solve folder is for your challenge writeup and solution scripts. Make sure the writeup is detailed. Challenge quality might be assessed through your writeup.
-        \n### {self.name}/src \
-        \nThe src folder is for your challenge source and should be used by your Dockerfile to build your challenge if your challenge needs to be deployed.
-Make sure this folder contains all necesary files so your challenge works properly.
-        \n### {self.name}/run.sh \
-        \n**IMPORTANT** Unless your challenge is deployed through Klodd, please make sure your challenge is entirely deployable by running `./run.sh`
-        \n## Merging \
-        \nWhen you have finished challenge development, please create a PR which will be merged after quality checks on the github.\
-        \n\n---\
-        \nThis README was autogenerated by mkchal.py, but written by Neil. Suggestions are welcome.
-        """
+        ret += f"""\n### {self.name}/dist
+Contains files distributed to competitors. If multiple files are included, bundle them into a ZIP archive. 
+### {self.name}/solve 
+Contains the challenge's writeup and solution scripts. A well-documented writeup is crucial for assessing challenge quality. 
+### {self.name}/src 
+Contains the challenge source files. If deployment is required, the `Dockerfile` should use this folder to build the challenge. Ensure all necessary files are included for proper functionality.
+### {self.name}/run.sh 
+**IMPORTANT**: If your challenge is not deployed via Klodd, ensure it can be fully deployed by running:
+```bash
+./run.sh
+```
+## Merging 
+Once your challenge is complete, submit a **Pull Request (PR)**. The PR will be merged after a quality review on GitHub.
+
+---
+This README was autogenerated by `mkchal.py`, but written by Neil. Suggestions are welcome.
+"""
         return ret
+    
+    def gen_dockerfile(self) -> str:
+        """Generates a sample Dockerfile"""
+
+        kwargs = {
+            "name": ChallengeUtils.safe_name(self.name)
+        }
+        return ChallengeUtils.generate_file_content(context / "mkchal" / "templates" / "Dockerfile", kwargs)
+        
+    
+    def gen_docker_compose(self) -> str:
+        """Generates a sample docker-compose.yml"""
+        safe_name = ChallengeUtils.safe_name(self.name)
+        kwargs = {
+            "name": safe_name,
+            "hash": ChallengeUtils.generate_service_name(safe_name),
+            "port": self.ports[0]
+        }
+        return ChallengeUtils.generate_file_content(context / "mkchal" / "templates" / "docker-compose.yml", kwargs)
+    
+    def gen_wrapper(self) -> str:
+        """Generates a sample wrapper.sh"""
+        
+        safe_name = ChallengeUtils.safe_name(self.name)
+        kwargs = {
+            "name": safe_name
+        }
+        return ChallengeUtils.generate_file_content(context / "mkchal" / "templates" / "wrapper.sh", kwargs)
+    
+    def gen_sample_py(self) -> str:
+        """Generates the sample python file"""
+
+        kwargs = {
+            "name": self.name
+        }
+        return ChallengeUtils.generate_file_content(context / "mkchal" / "templates" / "sample.py", kwargs)
+    
+    def gen_klodd_challenge(self) -> str:
+        """Generates a sample challenge.yml"""
+        safe_name = ChallengeUtils.safe_name(self.name)
+        kwargs = {
+            "unsafe_name": self.name,
+            "name": safe_name,
+            "port": self.ports[0],
+            "image": f"{self.registry}/{safe_name}"
+        }
+        return ChallengeUtils.generate_file_content(context / "mkchal" / "templates" / "challenge.yml", kwargs)
     
     def create(self) -> bool:
         """Creates the challenge structure for a challenge"""
@@ -213,7 +289,7 @@ Make sure this folder contains all necesary files so your challenge works proper
 
 if __name__ == "__main__":
     loaded_challs = ChallengeUtils.load_challenges()
-    c = Challenge("Amazing Challenge", "CygnusX-26", "An amazing sample challenge with an equally amazing description", "bctf{amazing_flag_moment}", ChallengeType.BLOCKCHAIN, DeployType.DOCKER_COMPOSE)
+    c = Challenge("LinkShortener", "CygnusX-26", "An amazing sample challenge with an equally amazing description", "bctf{amazing_flag_moment}", ChallengeType.REV, DeployType.KLODD)
     c.difficulty = "Easy"
     c.hidden = True
     c.maxPoints = 1

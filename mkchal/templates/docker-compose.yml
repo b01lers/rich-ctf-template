@@ -1,0 +1,10 @@
+services:
+  {name}:
+      container_name: {hash}
+      build:
+          dockerfile: ./deploy/Dockerfile
+          context: ../
+      logging:
+          driver: "json-file"
+      ports:
+          - "{port}:1337"
