@@ -1,0 +1,37 @@
+name: Verify and Edit PR
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  verify-integrity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      
+      - name: Install dependencies
+        run: pip install PyYAML
+
+      - name: Run verify script
+        run: python .github/scripts/verify.py
+
+      - name: Add and commit the changes
+        run: |
+          git config --global user.name "CygnusX-26"
+          git config --global user.email "qh4nveh@gmail.com"
+          
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-update modified_file.txt"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
