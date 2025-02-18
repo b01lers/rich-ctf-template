@@ -1,0 +1,33 @@
+apiVersion: "klodd.tjcsec.club/v1"
+kind: Challenge
+metadata:
+  name: {name} # The name of the resource is also used in the challenge URL. For example, the page for this challenge is accessible at /challenge/test.
+spec:
+  name: {name} # This is the name displayed on the frontend. It does not have to be related to metadata.name in any way.
+  timeout: 1000000 # Each instance will be stopped after this many milliseconds.
+  pods:
+    - name: app # the name of the pod, ensure this and expose.pod match
+      ports: 
+        - port: {port} # listed port inside the container, ensure this matches the exposed port
+      spec:
+        containers:
+          - name: main
+            image: {image} # The image to run for this pod.
+            resources:
+              requests:
+                memory: 100Mi
+                cpu: 75m
+              limits:
+                memory: 250Mi
+                cpu: 100m
+        automountServiceAccountToken: false
+  expose:
+    kind: http
+    pod: app # the name of the pod, ensure this and pods.name match
+    port: {port} # the port to expose, ensure this matches the listed port in pods.ports.port
+  middlewares:
+    - contentType:
+        autoDetect: false
+    - rateLimit:
+        average: 5
+        burst: 10
