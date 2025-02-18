@@ -24,11 +24,13 @@ for dir in context_dir.iterdir():
 if violations > 0:
     exit(1)
 
+
+print("Commenting out ports in docker-compose.yml ")
+
 files = list(context_dir.rglob("docker-compose.yml"))
 
 for file in files:
-    with open(file, "r") as file:
-        lines = file.readlines()
+    lines = file.read_text().split("\n")
 
     updated_lines = []
     inside_ports = False
@@ -43,7 +45,6 @@ for file in files:
             inside_ports = False
             updated_lines.append(line)
 
-    with open(file, "w") as file:
-        file.writelines(updated_lines)
+        file.write_text("\n".join(updated_lines))
 
-print("Successfully commented out 'ports' field in the YAML file.")
+print("Done!")
