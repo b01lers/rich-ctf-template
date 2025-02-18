@@ -1,4 +1,4 @@
-name: Verify and Edit PR
+name: Verify Integrity
 
 on:
   pull_request:
