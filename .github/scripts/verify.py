@@ -22,28 +22,3 @@ for dir in context_dir.iterdir():
 
 if violations > 0:
     exit(1)
-
-
-print("Commenting out ports in docker-compose.yml ")
-
-files = list(context_dir.rglob("docker-compose.yml"))
-
-for file in files:
-    lines = file.read_text().split("\n")
-
-    updated_lines = []
-    inside_ports = False
-    for line in lines:
-        stripped = line.lstrip()
-        if stripped.startswith("ports:"):
-            updated_lines.append("# " + line)
-            inside_ports = True
-        elif inside_ports and (stripped.startswith("-") or stripped.startswith("  -")):
-            updated_lines.append("# " + line)
-        else:
-            inside_ports = False
-            updated_lines.append(line)
-
-        file.write_text("\n".join(updated_lines))
-
-print("Done!")

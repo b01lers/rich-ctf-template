@@ -39,7 +39,8 @@ options:
 
 ### After verifying your challenge works
  - Push your changes and make a pull request to the ctf repo using the branch given in
- the final output of mkchal.py
+ the final output of mkchal.py.
+ - Before creating a PR please comment out the ports in your docker-compose file.
 
 ## Structure
 

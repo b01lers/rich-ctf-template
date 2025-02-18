@@ -1,8 +1,18 @@
 Checklist For PRs:
 
+- [ ] Ports have been commented out in your `docker-compose.yml` if applicable.
+ ```yml
+ ports:
+  - 1337
+ ```
+ becomes
+ ```yml
+ # ports:
+ # - 1337
+ ```
 - [ ] Is solvable (you don't have to solve it blind, just go through the solve and validate it and sanity check it)
 - [ ] Flag is in `bctf{...}` format (if impossible, the format is noted in the description.)
-- [ ] Writeup is present in `chall/README.md`
+- [ ] Writeup is present in `solve/README.md`
 - [ ] Writeup is high quality and completely explains how to solve the challenge from scratch
 - [ ] `chal.json` is present in the challenge root directory and contains:
   - [ ] Challenge Title
@@ -14,3 +24,4 @@ Checklist For PRs:
   - [ ] Dockerfile
   - [ ] docker-compose.yml
   - [ ] run.sh
+  - [ ] challenge.yml
