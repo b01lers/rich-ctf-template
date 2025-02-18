@@ -43,6 +43,8 @@ options:
 
 ## Structure
 
+All challenges can be found in `src`.
+
 Challenges are organized by category into subdirectories:
  - rev
  - crypto

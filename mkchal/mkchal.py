@@ -68,7 +68,7 @@ class ChallengeUtils:
     def generate(challenge_obj: Challenge) -> bool:
         """Generates a challenge. Assumes valid fields"""
         global context
-        challenge: Path = context / challenge_obj.type.value / challenge_obj.name
+        challenge: Path = context / "src" / challenge_obj.type.value / challenge_obj.name
         challenge.mkdir(parents=True, exist_ok=DEBUG)
         ChallengeUtils.__generate_defaults(challenge_obj, challenge)
         ChallengeUtils.__generate_deployments(challenge_obj, challenge)
@@ -97,7 +97,8 @@ class ChallengeUtils:
             "misc": {},
             "osint": {}
         }
-        for dir in context.iterdir():
+        context_dir = context / "src"
+        for dir in context_dir.iterdir():
             if dir.is_dir() and dir.name in d.keys():
                 for challenge in dir.iterdir():
                     d[dir.name][challenge.name] = loads((challenge / "chal.json").read_text())
