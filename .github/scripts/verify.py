@@ -1,6 +1,5 @@
 from pathlib import Path 
 from json import loads, JSONDecodeError
-from yaml import load
 
 violations = 0
 
