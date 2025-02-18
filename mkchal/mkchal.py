@@ -381,8 +381,8 @@ if __name__ == "__main__":
         "--ports",
         nargs="+",
         type=int,
-        required=False,
-        help="The ports that the challenge provides. Example: 1337 1338",
+        required=True,
+        help="The ports that the challenge provides. Example: 1337 1338. If no ports please pass 0000",
     )
 
     parser.add_argument(
