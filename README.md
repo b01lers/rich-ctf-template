@@ -1,5 +1,5 @@
 # ctf-name-here
-New age CTF Template 
+Made with the Rich CTF template
 
 ### Run mkchal.py
 
@@ -41,3 +41,35 @@ options:
  - Push your changes and make a pull request to the ctf repo using the branch given in
  the final output of mkchal.py
 
+## Structure
+
+Challenges are organized by category into subdirectories:
+ - rev
+ - crypto
+ - pwn
+ - misc
+ - blockchain
+ - osint
+ - web
+
+## Directory Structure
+```      
+challenge_category   
+ └── challenge_name         
+    ├── deploy             
+    │    └──  deployment files              
+    ├── dist         
+    │    └── files to be given to competitors         
+    ├── solve         
+    │    └── writeup and solution scripts         
+    ├── src         
+    │    └── challenge source files         
+    ├── chall.json ── challenge information         
+    ├── flag.txt ── the flag         
+    ├── README.md ── this file         
+    └── run.sh ── what will be run to deploy your challenge
+```
+
+---
+
+Created by CygnusX and aims to be an improvement on [ctf-template](https://github.com/b01lers/ctf-template) any feedback or suggestions on clarity are welcome.
