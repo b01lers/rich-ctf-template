@@ -2,10 +2,11 @@ from __future__ import annotations
 from enum import Enum
 from re import match, sub
 from pathlib import Path
-from json import dumps
+from json import dumps, loads
 from secrets import token_hex
+from os import path as os_path
 
-import os
+import argparse
 
 """
 Should be in the structure of
@@ -14,7 +15,7 @@ type2: [...],
 ...
 """
 loaded_challs = {}
-context = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+context = Path(os_path.dirname(os_path.dirname(os_path.abspath(__file__))))
 DEBUG = False
 
 class ChallengeType(str, Enum):
@@ -28,25 +29,33 @@ class ChallengeType(str, Enum):
     BLOCKCHAIN = "blockchain"
     OSINT = "osint"
 
+class ChallengeDifficulty(str, Enum):
+    """Describes a CTF challenge difficulty"""
+
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+    IMPOSSIBLE = "impossible"
+
+
 class DeployType(str, Enum):
     """Describes a deployment type."""
 
-    DOCKER_COMPOSE = "docker-compose"
+    DOCKER_COMPOSE = "docker"
     KLODD = "klodd"
-    NO_DEPLOY = "None"
+    NO_DEPLOY = "none"
 
 class ChallengeUtils:
 
     @staticmethod
-    def validate_name(name: str) -> tuple[bool, str]:
+    def validate_name(challenge: Challenge) -> tuple[bool, str]:
         """Validates a challenge name"""
 
         if len(loaded_challs.keys()) < 1:
             return (False, "Unloaded challs")
-        for type in loaded_challs.values():
-            for chall in type:
-                if chall["name"] == name:
-                    return (False, f"Name {name} conflicts with {chall['name']} by {chall['author']} in {type}")
+        for chall_name in loaded_challs[challenge.type.value].keys():
+            if ChallengeUtils.safe_name(challenge.name) == ChallengeUtils.safe_name(chall_name):
+                return (False, f"Name {challenge.name} conficts with challenge {chall_name} in category {challenge.type.value}")
         return (True, "success")
     
     @staticmethod
@@ -69,6 +78,7 @@ class ChallengeUtils:
     def retrieve_valid_port(type: ChallengeType) -> tuple[bool, int]:
         """returns: (success, port)"""
         #TODO create server on b01lers server that generates a valid port
+        # We let the user choose a port for now, with traefik this shouldn't be needed
         return (False, 0)
     
     @staticmethod
@@ -77,7 +87,21 @@ class ChallengeUtils:
         Loads all currently created challenges into a dict.
         Assumes proper directory structure.
         """
-        return {}
+
+        d: dict = {
+            "rev": {},
+            "pwn": {},
+            "crypto": {},
+            "blockchain": {},
+            "web": {},
+            "misc": {},
+            "osint": {}
+        }
+        for dir in context.iterdir():
+            if dir.is_dir() and dir.name in d.keys():
+                for challenge in dir.iterdir():
+                    d[dir.name][challenge.name] = loads((challenge / "chal.json").read_text())
+        return d
     
     @staticmethod
     def generate_service_name(name: str) -> str:
@@ -125,9 +149,9 @@ class Challenge:
     """Represents a challenge object"""
 
     __slots__ = ["name", "author", "description", "flag", "type", "deploy", "ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags", "difficulty", "auto", "registry"]
-    optional_fields = ["ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags", "difficulty"]
+    optional_fields = ["ports", "hidden", "minPoints", "maxPoints", "tiebreakEligible", "prereqs", "tags"]
     
-    def __init__(self, name: str, author: str, description: str, flag: str, type: ChallengeType, deploy: DeployType, auto:bool=False) -> None:
+    def __init__(self, name: str, author: str, description: str, flag: str, type: ChallengeType, deploy: DeployType, difficulty: ChallengeDifficulty, auto:bool=False) -> None:
         self.name = name
         self.author = author
         self.description = description
@@ -142,7 +166,7 @@ class Challenge:
         self.tiebreakEligible = None
         self.prereqs = None
         self.tags = None
-        self.difficulty = None
+        self.difficulty = difficulty
         self.registry = "localhost:5000"
     
     def to_json(self) -> dict:
@@ -152,6 +176,7 @@ class Challenge:
             "author": self.author,
             "description": self.description,
             "flag": self.flag,
+            "difficulty": self.difficulty.value,
             "can_be_auto_deployed": self.auto
         }
         for field in self.optional_fields:
@@ -188,7 +213,7 @@ class Challenge:
         ret += f"""\n## Quickstart to challenge development 
 Make sure you develop your challenge on a new branch. You can create one with
 ```bash
-git checkout -b {self.name}-{self.author}
+git checkout -b {self.name}_{self.author}
 ```"""
         if self.deploy == DeployType.DOCKER_COMPOSE:
             ret += f"""\n### {self.name}/deploy
@@ -299,12 +324,107 @@ This README was autogenerated by `mkchal.py`, but written by Neil. Suggestions a
 
 if __name__ == "__main__":
     loaded_challs = ChallengeUtils.load_challenges()
-    c = Challenge("LinkShortener", "CygnusX-26", "An amazing sample challenge with an equally amazing description", "bctf{amazing_flag_moment}", ChallengeType.WEB, DeployType.DOCKER_COMPOSE)
-    c.difficulty = "Easy"
-    c.hidden = True
-    c.maxPoints = 1
-    c.minPoints = 1
-    c.ports = [4000, 4001]
-    # c.hidden = True
-    # print(c.to_json())
-    print(ChallengeUtils.generate(c))
+
+    parser = argparse.ArgumentParser(prog='mkchal', description='Creates a sample challenge for a ctf')
+
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=True,
+        help="The name of the challenge."
+    )
+
+    parser.add_argument(
+        "--desc",
+        type=str,
+        required=True,
+        help="The description of the challenge."
+    )
+
+    parser.add_argument(
+        "--author",
+        type=str,
+        required=True,
+        help="The author of the challenge."
+    )
+
+    parser.add_argument(
+        "--flag",
+        type=str,
+        required=True,
+        help="The challenge flag."
+    )
+
+    parser.add_argument(
+        "--type",
+        type=ChallengeType,
+        required=True,
+        choices=[c.value for c in ChallengeType],
+        help="The type of the challenge."
+    )
+
+    parser.add_argument(
+        "--deploy",
+        type=DeployType,
+        required=True,
+        choices=[c.value for c in DeployType],
+        help="How the challenge will be deployed"
+    )
+
+    parser.add_argument(
+        "--ports",
+        nargs="+",
+        type=int,
+        required=False,
+        help="The ports that the challenge provides. Example: 1337 1338",
+    )
+
+    parser.add_argument(
+        "--autodeploy",
+        type=bool,
+        required=True,
+        choices=[b for b in [False, True]],
+        help="Whether or not the challenge can be automatically deployed.",
+    )
+
+    parser.add_argument(
+        "--difficulty",
+        type=ChallengeDifficulty,
+        required=True,
+        choices=[c.value for c in ChallengeDifficulty],
+        help="The challenge difficulty.",
+    )
+
+    args = parser.parse_args()
+
+    c = Challenge(
+        ChallengeUtils.safe_name(args.name),
+        args.author,
+        args.desc, 
+        args.flag,
+        args.type,
+        args.deploy,
+        args.difficulty,
+        args.autodeploy)
+    
+    if args.ports:
+        c.ports = args.ports
+
+    conflict, reason = ChallengeUtils.validate_name(c)
+    if not conflict:
+        print()
+        print("Error: " + reason)
+        exit()
+
+    conflict = ChallengeUtils.validate_flag(c.flag)
+    if not conflict:
+        print()
+        print("Error: " + r"Flag does not match ^bctf\{.*\}$")
+        exit()
+        
+    conflict = ChallengeUtils.generate(c)
+    if conflict:
+        print(f"Done. Run `git checkout -b {c.name}_{c.author}` to switch to a branch and start working.")
+    else:
+        print()
+        print("Error: Failed to create challenge.")
