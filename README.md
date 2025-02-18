@@ -4,7 +4,9 @@ Made with the Rich CTF template
 ### Run mkchal.py
 
 ```bash
-python3 mkchal/mkchal.py -h
+$ python3 mkchal/mkchal.py -h
+
+
 usage: mkchal [-h] --name NAME --desc DESC --author AUTHOR --flag FLAG --type {rev,pwn,crypto,web,misc,blockchain,osint} --deploy {docker,klodd,none}
               [--ports PORTS [PORTS ...]] --autodeploy {False,True} --difficulty {easy,medium,hard,impossible}
 
