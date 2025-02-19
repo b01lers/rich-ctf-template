@@ -7,8 +7,8 @@ FROM debian@sha256:4abf773f2a570e6873259c4e3ba16de6c6268fb571fd46ec80be7c6782282
 RUN apt-get update && \
 apt-get install -y socat
 
-# wrapper.sh wraps the executable by 
-# `cd`ing to the right place
+# wrapper.sh wraps the executable by
+# performing any necessary setup
 # this has to be called /app/run for redpwn jail to work
 COPY ./deploy/wrapper.sh /app/run
 RUN chmod +x /app/run
@@ -28,12 +28,12 @@ FROM pwn.red/jail
 # /srv will be all files in the jail
 COPY --from={name}_inner_container / /srv
 
-# redpwn jail options can be found at options can be found at https://github.com/redpwn/jail?tab=readme-ov-file#configuration-reference
+# redpwn jail options can be found at https://github.com/redpwn/jail?tab=readme-ov-file#configuration-reference
 # some example options are set below
 
 # configures allowed memory in redpwn jail
 ENV JAIL_MEM=10M
 # configures time before chall is killed
 ENV JAIL_TIME=120
-# Use specified port to run challenge
+# use specified port to run challenge
 ENV JAIL_PORT={port}
