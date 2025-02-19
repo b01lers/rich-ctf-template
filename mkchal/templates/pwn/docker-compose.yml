@@ -1,0 +1,29 @@
+services:
+    {name}:
+        container_name: {hash}
+        # needed for redpwn jail to work
+        privileged: true
+        build:
+            dockerfile: ./deploy/Dockerfile
+            context: ../
+        logging:
+            driver: "json-file"
+        expose:
+            - "{port}"
+        # please do not delete these labels, if you have a second service make sure the service name and port are replaced
+        labels:
+            - "traefik.http.routers.{name}.rule=Host(`{name}.b01lersc.tf`)"
+            - "traefik.http.services.{name}.loadbalancer.server.port={port}"
+        # please comment the ports field out when you are ready to make PR.
+        ports:
+            - "1337:{port}"
+    {name}_build:
+        container_name: {hash}_build
+        build:
+            dockerfile: ./deploy/Dockerfile_build
+            context: ../
+        logging:
+            driver: "json-file"
+        volumes:
+            - ../dist:/dist
+     
