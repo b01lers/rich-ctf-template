@@ -6,4 +6,8 @@ cd $(dirname $0)
 export USER_ID=$(id -u)
 export GROUP_ID=$(id -g)
 
-cd deploy && sudo docker-compose up {name}_build --build
+# Don't use sudo to run docker-compose here, you have to add yourself to docker group
+# If you need to use sudo, you have to pass options to sudo to make sure
+# USER_ID and GROUP_ID env variables are passed into docker-compose
+# Otherwise outputed files in dist will be owned by root
+cd deploy && docker-compose up {name}_build --build

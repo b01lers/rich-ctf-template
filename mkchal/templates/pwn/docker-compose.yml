@@ -18,6 +18,7 @@ services:
         ports:
             - "1337:{port}"
     {name}_build:
+        user: "${{USER_ID}}:${{GROUP_ID}}"
         container_name: {hash}_build
         build:
             dockerfile: ./deploy/Dockerfile_build

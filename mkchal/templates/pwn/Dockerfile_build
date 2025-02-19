@@ -20,4 +20,7 @@ RUN chmod 777 /home/$USER
 RUN chmod +x /home/$USER/build.sh
 
 # Build the challenge and output it to dist folder
-CMD /home/$USER/build.sh && cp /home/$USER/chall /dist/chall
+# Also copy the libc if it is needed by the challenge, remove that line if you don't need it
+CMD /home/$USER/build.sh && \
+	cp /home/$USER/chall /dist/chall && \
+	cp /lib/x86_64-linux-gnu/libc.so.6 /dist/libc.so.6

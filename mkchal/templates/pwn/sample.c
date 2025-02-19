@@ -8,6 +8,8 @@ void setup() {{
 
 // Sample challenge which just prints the flag free to delete this
 int main() {{
+    setup();
+
     char flag_buf[128] = {{ 0 }};
 
     FILE *file = fopen("./flag.txt", "r");
