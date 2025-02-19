@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# builds you cahllenge
+# builds your challenge
 # can be used locally for testing, but is used inside build container
 
 cd $(dirname $0)

@@ -151,7 +151,7 @@ class ChallengeUtils:
                 (challenge / "build_dist.sh").write_text(challenge_obj.gen_pwn_build_dist())
                 (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo docker-compose up {ChallengeUtils.safe_name(challenge_obj.name)} -d --build")
             else:
-                (challenge / "src" / "sample.py").write_text(challenge_obj.gen_sample_py())
+                (challenge / "src" / "sample.py").write_text(challenge_obj.gen_sample())
                 if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
                     (challenge / "deploy" / "docker-compose.yml").write_text(challenge_obj.gen_docker_compose())
                     (challenge / "run.sh").write_text("#!/bin/bash\ncd deploy && sudo docker-compose up -d --build")
@@ -244,6 +244,15 @@ If your challenge allows Remote Code Execution (RCE), it must be sandboxed using
  - [nsjail](https://github.com/google/nsjail)
  - [redpwn jail](https://github.com/redpwn/jail).
 """
+            
+        if self.type == ChallengeType.PWN:
+            ret += f"""\n### Build system (for pwn challenges)
+The sample files generated for a pwn challenge include a build system which will build your executable and place it in the dist directory.
+The sample `Dockerfile` uses this executable in dist to run the challenge.
+You should keep this structure the same when you add your challenge as it is important for the Docker container to run the same binary as you give the competitors.
+
+"""
+
         if self.deploy == DeployType.KLODD:
             ret += f"""\n### {self.name}/deploy
 The sample deploy folder contains
