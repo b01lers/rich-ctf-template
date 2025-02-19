@@ -32,9 +32,7 @@ RUN chmod -R 550 /home/$USER
 RUN chmod -x /home/$USER/flag.txt
 
 # Whatever port you configure in the socat command
-# PROBABLY this should stay 1337. Just change
-# The passthrough port in docker-compose.yml below.
-EXPOSE 1337
+EXPOSE {port}
 
 # Serves wrapper.sh which wraps the sample python file
-CMD socat TCP-LISTEN:1337,reuseaddr,fork EXEC:"/home/$USER/wrapper.sh"
+CMD socat TCP-LISTEN:{port},reuseaddr,fork EXEC:"/home/$USER/wrapper.sh"

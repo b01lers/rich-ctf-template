@@ -1,10 +1,19 @@
 services:
-  {name}:
-      container_name: {hash}
-      build:
-          dockerfile: ./deploy/Dockerfile
-          context: ../
-      logging:
-          driver: "json-file"
-      ports:
-          - "{port}:1337"
+    {name}:
+        container_name: {hash}
+        build:
+            dockerfile: ./deploy/Dockerfile
+            context: ../
+        logging:
+            driver: "json-file"
+        expose:
+            - "{port}"
+        # please do not delete these labels, if you have a second service make sure the service name and port are replaced
+        labels:
+            - "traefik.http.routers.{name}.rule=Host(`{name}.b01lersc.tf`)"
+            - "traefik.http.services.{name}.loadbalancer.server.port={port}"
+        # please comment the ports field out when you are ready to make PR.
+        ports:
+            - "1337:{port}"
+
+     

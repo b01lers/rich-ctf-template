@@ -10,4 +10,4 @@ def index():
     return "Hello I am challenge: {name} and my flag is " + file
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 1337)
+    app.run("0.0.0.0", {port})

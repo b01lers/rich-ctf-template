@@ -33,7 +33,7 @@ RUN chmod -x /home/$USER/flag.txt
 # Whatever port you configure in your web server
 # PROBABLY this should stay 1337. Just change
 # The passthrough port in docker-compose.yml below.
-EXPOSE 1337
+EXPOSE {port}
 
 # Serves wrapper.sh which wraps the sample python file
 CMD "/home/$USER/wrapper.sh"

@@ -7,12 +7,12 @@ Made with the Rich CTF template
 $ python3 mkchal/mkchal.py -h
 
 
-usage: mkchal [-h] --name NAME --desc DESC --author AUTHOR --flag FLAG --type {rev,pwn,crypto,web,misc,blockchain,osint} --deploy {docker,klodd,none}
-              [--ports PORTS [PORTS ...]] --autodeploy {False,True} --difficulty {easy,medium,hard,impossible}
+usage: mkchal [-h] --name NAME --desc DESC --author AUTHOR --flag FLAG --type {rev,pwn,crypto,web,misc,blockchain,osint} --deploy
+              {docker,klodd,none} --ports PORTS [PORTS ...] --autodeploy {False,True} --difficulty {easy,medium,hard,impossible}
 
 Creates a sample challenge for a ctf
 
-options:
+optional arguments:
   -h, --help            show this help message and exit
   --name NAME           The name of the challenge.
   --desc DESC           The description of the challenge.
@@ -23,7 +23,7 @@ options:
   --deploy {docker,klodd,none}
                         How the challenge will be deployed
   --ports PORTS [PORTS ...]
-                        The ports that the challenge provides. Example: 1337 1338
+                        The ports that the challenge runs on inside the container.
   --autodeploy {False,True}
                         Whether or not the challenge can be automatically deployed.
   --difficulty {easy,medium,hard,impossible}
@@ -34,6 +34,8 @@ options:
 
 ### After mkchal.py
 
+- A sample challenge will be created inside your challenge directory accessible at port 1337.
+- Please read the generated README.md in your challenge for more information.
 - Checkout a new branch 
   - ```bash
     git checkout -b testachall_CygnusX
