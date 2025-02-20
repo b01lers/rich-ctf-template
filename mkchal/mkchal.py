@@ -245,7 +245,7 @@ If your challenge allows Remote Code Execution (RCE), it must be sandboxed using
  - [redpwn jail](https://github.com/redpwn/jail).
 """
             
-        if self.type == ChallengeType.PWN:
+        if self.type == ChallengeType.PWN and self.deploy != DeployType.NO_DEPLOY:
             ret += f"""\n### Build system (for pwn challenges)
 The sample files generated for a pwn challenge include a build system which will build your executable and place it in the dist directory.
 The sample `Dockerfile` uses this executable in dist to run the challenge.
@@ -453,7 +453,7 @@ if __name__ == "__main__":
         "--ports",
         nargs="+",
         type=int,
-        required=True,
+        required=False,
         help="The ports that the challenge runs on inside the container.",
     )
 
@@ -487,6 +487,9 @@ if __name__ == "__main__":
     
     if args.ports:
         c.ports = args.ports
+    elif args.deploy != DeployType.NO_DEPLOY:
+        print("Error: deploy with no ports")
+        exit()
 
     conflict, reason = ChallengeUtils.validate_name(c)
     if not conflict:
