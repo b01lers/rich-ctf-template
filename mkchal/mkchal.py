@@ -149,7 +149,7 @@ class ChallengeUtils:
                 assert challenge_obj.deploy == DeployType.DOCKER_COMPOSE
                 (challenge / "deploy" / "docker-compose.yml").write_text(challenge_obj.gen_docker_compose())
                 (challenge / "build_dist.sh").write_text(challenge_obj.gen_pwn_build_dist())
-                (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo docker-compose up {ChallengeUtils.safe_name(challenge_obj.name)} -d --build")
+                (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo docker-compose up -d --build {ChallengeUtils.safe_name(challenge_obj.name)}")
             else:
                 (challenge / "src" / "sample.py").write_text(challenge_obj.gen_sample())
                 if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
