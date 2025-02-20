@@ -12,7 +12,7 @@ services:
         expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
-            - "traefik.http.routers.${{CHALL_HASH}}.rule=Host(`${{CHALL_HASH}}.b01le.rs`)"
+            - "traefik.http.routers.${{CHALL_HASH}}.rule=Host(`${{CHALL_HASH}}.{root_domain}`)"
             - "traefik.http.services.${{CHALL_HASH}}.loadbalancer.server.port={port}" # should match the exposed port
             - "traefik.http.routers.${{CHALL_HASH}}.tls={{}}"
             - "traefik.http.routers.${{CHALL_HASH}}.entrypoints=websecure"
