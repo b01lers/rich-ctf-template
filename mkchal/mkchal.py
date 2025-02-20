@@ -163,7 +163,10 @@ class ChallengeUtils:
                 if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
                     subdomain = ChallengeUtils.generate_service_name(challenge_obj.name)
                     (challenge / "deploy" / "docker-compose.yml").write_text(challenge_obj.gen_docker_compose())
-                    (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo -E env CHALL_HASH='{subdomain}' docker-compose up -d --build && echo '\n\n\nIf you are on prod or testing server, here is how you connect:' && echo '> curl https://{subdomain}.{ROOT_DOMAIN}'\n")
+                    if challenge_obj.type == ChallengeType.WEB:
+                        (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo -E env CHALL_HASH='{subdomain}' docker-compose up -d --build && echo '\n\n\nIf you are on prod or testing server, here is how you connect:' && echo '> curl https://{subdomain}.{ROOT_DOMAIN}'\n")
+                    else:
+                        (challenge / "run.sh").write_text(f"#!/bin/bash\ncd deploy && sudo -E env CHALL_HASH='{subdomain}' docker-compose up -d --build {ChallengeUtils.safe_name(challenge_obj.name)} && echo '\n\n\nIf you are on prod or testing server, here is how you connect:' && echo '> ncat --ssl {subdomain}.{ROOT_DOMAIN} {TCP_SEC_ENTRY}'")
                 elif challenge_obj.deploy == DeployType.KLODD:
                     #TODO: b01lers kube interface would be different, wait for vinh's decision
                     (challenge / "deploy" / "challenge.yml").write_text(challenge_obj.gen_klodd_challenge())
