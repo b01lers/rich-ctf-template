@@ -23,7 +23,7 @@ optional arguments:
   --deploy {docker,klodd,none}
                         How the challenge will be deployed
   --ports PORTS [PORTS ...]
-                        The ports that the challenge runs on inside the container.
+                        The ports that the challenge runs on INSIDE the container.
   --autodeploy {False,True}
                         Whether or not the challenge can be automatically deployed.
   --difficulty {easy,medium,hard,impossible}
@@ -46,6 +46,7 @@ optional arguments:
  - Push your changes and make a pull request to the ctf repo using the branch given in
  the final output of mkchal.py.
  - Before creating a PR please comment out the ports in your docker-compose file.
+ - For web challenges, unless you want to do H2 shenanegans like single packet attack, please uncomment the lines under `labels` relating to rate-limiting. The field "average" is the rps and "burst" is self-explanatory, edit if you need.
 
 ## Structure
 
@@ -80,4 +81,4 @@ challenge_category
 
 ---
 
-Created by CygnusX and aims to be an improvement on [ctf-template](https://github.com/b01lers/ctf-template) any feedback or suggestions on clarity are welcome.
+Created by CygnusX (with domain specific contributions from Ky28059, Athryx, VinhChilling) and aims to be an improvement on [ctf-template](https://github.com/b01lers/ctf-template) any feedback or suggestions on clarity are welcome.
