@@ -1,5 +1,5 @@
 # Standard debian instance, pin specific version to avoid breaking libc changes and such
-FROM debian@sha256:4abf773f2a570e6873259c4e3ba16de6c6268fb571fd46ec80be7c67822823b3 AS {name}_inner_container
+FROM --platform=linux/amd64 debian@sha256:4abf773f2a570e6873259c4e3ba16de6c6268fb571fd46ec80be7c67822823b3 AS {name}_inner_container
 
 # Install any software to run the challenge
 # Build tools should be installed in Dockerfile_build

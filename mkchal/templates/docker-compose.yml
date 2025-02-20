@@ -6,14 +6,21 @@ services:
             context: ../
         logging:
             driver: "json-file"
-        expose:
+        restart: always # please keep this in
+        networks:
+            - traefuck
+        expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
-        # please do not delete these labels, if you have a second service make sure the service name and port are replaced
-        labels:
-            - "traefik.http.routers.{name}.rule=Host(`{name}.b01lersc.tf`)"
-            - "traefik.http.services.{name}.loadbalancer.server.port={port}"
-        # please comment the ports field out when you are ready to make PR.
-        ports:
+        labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
+            - "traefik.enable=true"
+            - "traefik.tcp.routers.{hash}.rule=HostSNI(`{hash}.b01le.rs`)"
+            - "traefik.tcp.routers.{hash}.tls=true"
+            - "traefik.tcp.routers.{hash}.entrypoints=ncsecure"
+            - "traefik.tcp.routers.{hash}.service={hash}-svc"
+            - "traefik.tcp.services.{hash}-svc.loadbalancer.server.port={port}"
+        ports: # please comment this whole ports field out when you are ready to make PR.
             - "1337:{port}"
-
-     
+networks: # Do not delete this
+  traefuck:
+    name: traefuck
+    external: true     

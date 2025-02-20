@@ -251,6 +251,10 @@ The sample files generated for a pwn challenge include a build system which will
 The sample `Dockerfile` uses this executable in dist to run the challenge.
 You should keep this structure the same when you add your challenge as it is important for the Docker container to run the same binary as you give the competitors.
 
+ - `./build_dist.sh` will build your challenge and copy the executable and libc to dist.
+
+ - `./run.sh` will run your challenge using the binary in dist.
+
 """
 
         if self.deploy == DeployType.KLODD:
