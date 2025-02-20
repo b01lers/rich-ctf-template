@@ -15,7 +15,7 @@ services:
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
             - "traefik.http.routers.{hash}.rule=Host(`{hash}.b01le.rs`)"
             - "traefik.http.services.{hash}.loadbalancer.server.port={port}" # should match the exposed port
-            - "traefik.http.routers.{hash}.tls={}"
+            - "traefik.http.routers.{hash}.tls={{}}"
             - "traefik.http.routers.{hash}.entrypoints=websecure"
         ports: # please comment the ports field out when you are done.
             - "1337:{port}"
