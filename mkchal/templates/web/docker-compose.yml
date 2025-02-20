@@ -11,7 +11,6 @@ services:
         restart: always # please keep this in
         expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
-        env_file: env
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
             - "traefik.http.routers.{hash}.rule=Host(`{hash}.b01le.rs`)"
             - "traefik.http.services.{hash}.loadbalancer.server.port={port}" # should match the exposed port
