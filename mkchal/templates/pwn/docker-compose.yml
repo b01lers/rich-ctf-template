@@ -14,11 +14,11 @@ services:
             - "{port}"
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
             - "traefik.enable=true"
-            - "traefik.tcp.routers.{hash}.rule=HostSNI(`{hash}.b01le.rs`)"
-            - "traefik.tcp.routers.{hash}.tls=true"
-            - "traefik.tcp.routers.{hash}.entrypoints=ncsecure"
-            - "traefik.tcp.routers.{hash}.service={hash}-svc"
-            - "traefik.tcp.services.{hash}-svc.loadbalancer.server.port={port}"
+            - "traefik.tcp.routers.${{CHALL_HASH}}.rule=HostSNI(`${{CHALL_HASH}}.b01le.rs`)"
+            - "traefik.tcp.routers.${{CHALL_HASH}}.tls=true"
+            - "traefik.tcp.routers.${{CHALL_HASH}}.entrypoints=ncsecure"
+            - "traefik.tcp.routers.${{CHALL_HASH}}.service=${{CHALL_HASH}}-svc"
+            - "traefik.tcp.services.${{CHALL_HASH}}-svc.loadbalancer.server.port={port}"
         ports: # please comment this whole ports field out when you are ready to make PR.
             - "1337:{port}"
     
@@ -37,4 +37,5 @@ services:
 networks: # Do not delete this
   traefuck:
     name: traefuck
-    external: true   
+    # please uncomment the below line when making a pr
+    # external: true     

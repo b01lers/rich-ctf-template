@@ -10,6 +10,14 @@ Checklist For PRs:
  # ports:
  # - 1337
  ```
+- [ ] Traefik network has been uncommented in your `docker-compose.yml` if applicable.
+ ```yml
+     # external: true  
+ ```
+ becomes
+ ```yml
+    external: true 
+ ``` 
 - [ ] Is solvable (you don't have to solve it blind, just go through the solve and validate it and sanity check it)
 - [ ] Flag is in `bctf{...}` format (if impossible, the format is noted in the description.)
 - [ ] Writeup is present in `solve/README.md`
