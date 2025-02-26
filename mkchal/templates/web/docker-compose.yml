@@ -18,7 +18,7 @@ services:
             - "traefik.http.routers.${{CHALL_HASH}}.entrypoints=websecure"
             # Delete this line, edit and uncomment the lines below to configure rate limiting for your service
             # - "traefik.http.middlewares.fluf.ratelimit.average=100"
-            # - "traefik.http.routers.${CHALL_HASH}.middlewares=fluf"  
+            # - "traefik.http.routers.${{CHALL_HASH}}.middlewares=fluf"  
             # - "traefik.http.middlewares.fluf.ratelimit.burst=100"
         ports: # please comment the ports field out when you are done.
             - "1337:{port}"
