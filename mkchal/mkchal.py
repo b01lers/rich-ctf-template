@@ -1,12 +1,12 @@
 from __future__ import annotations
-from enum import Enum
-from re import match, sub
-from pathlib import Path
-from json import dumps, loads
-from secrets import token_hex
+
 import os
 import stat
-
+from enum import Enum
+from json import dumps, loads
+from pathlib import Path
+from re import match, sub
+from secrets import token_hex
 
 # Infra constants
 ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs") # TODO: make it compliant with the testing workflow and VPS
@@ -25,6 +25,7 @@ SOLVE = "solve"
 CHAL_JSON = "chal.json"
 DOCKERFILE = "Dockerfile"
 COMPOSE = "docker-compose.yml"
+COMPOSE_PROD = "docker-compose.prod.yml"
 WRAPPER = "wrapper.sh"
 SAMPLE_PY = "sample.py"
 SAMPLE_C = "sample.c"
@@ -32,6 +33,7 @@ KLODD_YAML = "challenge.yml"
 BUILD_SH = "build.sh"
 DOCKERFILE_BUILD = "Dockerfile_build"
 BUILD_DIST = "build_dist.sh"
+DEV_SH = "dev.sh"
 RUN_SH = "run.sh"
 README = "README.md"
 FLAG = "flag.txt"
@@ -176,18 +178,24 @@ class ChallengeUtils:
         (challenge / CHAL_JSON).write_text(str(challenge_obj))
         (challenge / FLAG).write_text(challenge_obj.flag)
 
-
-
     @staticmethod
     def __generate_deployments(challenge_obj: Challenge, challenge: Path) -> None:
-        from textwrap import dedent
         if challenge_obj.deploy == DeployType.NO_DEPLOY:
             return
+        
         (challenge / DEPLOY).mkdir(parents=True, exist_ok=DEBUG)
         (challenge / DEPLOY / DOCKERFILE).write_text(challenge_obj.gen_dockerfile())
+        (challenge / DEPLOY / COMPOSE).write_text(challenge_obj.gen_docker_compose())
+        (challenge / DEPLOY / COMPOSE_PROD).write_text(
+            ChallengeUtils.generate_file_content(TEMPLATES_DIR / COMPOSE_PROD, {})
+        )
         (challenge / DEPLOY / WRAPPER).write_text(challenge_obj.gen_wrapper())
+
+        (challenge / RUN_SH).write_text(challenge_obj.gen_run_sh())
+        (challenge / DEV_SH).write_text(challenge_obj.gen_dev_sh())
+        make_file_executable(challenge / RUN_SH)
+        make_file_executable(challenge / DEV_SH)
         
-        compose_command = "docker compose" if ChallengeUtils.has_docker_space_compose() else "docker-compose"
         if challenge_obj.type == ChallengeType.PWN:
             # special build Dockerfile and redpwn jail for pwn
             (challenge / SRC / SAMPLE_C).write_text(challenge_obj.gen_sample())
@@ -197,78 +205,16 @@ class ChallengeUtils:
 
             # for now pwn only support docker-compose
             assert challenge_obj.deploy == DeployType.DOCKER_COMPOSE
-            subdomain = ChallengeUtils.generate_service_name(challenge_obj.name)
-            (challenge / DEPLOY / COMPOSE).write_text(challenge_obj.gen_docker_compose())
             (challenge / BUILD_DIST).write_text(challenge_obj.gen_pwn_build_dist())
             make_file_executable(challenge / BUILD_DIST)
-            (challenge / RUN_SH).write_text(
-                dedent(f"""
-                #!/bin/sh
-                cd deploy && sudo {compose_command} up -d --build {challenge_obj.name} && echo '
-                
-                
-                If you are testing locally:' && echo '> ncat localhost 1337' && echo '
-                If you are on prod or testing server, here is how you connect:' && echo '> ncat --ssl {subdomain}.{ROOT_DOMAIN} {TCP_SEC_ENTRY}'
-                """)
-            )
-            make_file_executable(challenge / RUN_SH)
+            
             return
 
         (challenge / SRC / SAMPLE_PY).write_text(challenge_obj.gen_sample())
-        if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
-            subdomain = ChallengeUtils.generate_service_name(challenge_obj.name)
-            (challenge / DEPLOY / COMPOSE).write_text(challenge_obj.gen_docker_compose())
-            if challenge_obj.type == ChallengeType.WEB:
-                (challenge / RUN_SH).write_text(dedent(
-                    f"""#!/bin/sh
-                    cd deploy && sudo {compose_command} up -d --build && echo '
-                    
-                    
-                    If you are testing locally:' && echo '> curl http://localhost:1337' && echo '
-                    If you are on prod or testing server, here is how you connect:' && echo '> curl https://{subdomain}.{ROOT_DOMAIN}'
-                    """)
-                )
-            else:
-                (challenge / RUN_SH).write_text(dedent(
-                    f"""
-                    #!/bin/sh
-                    cd deploy && sudo {compose_command} up -d --build {challenge_obj.name} && echo '
-                    
-                    
-                    If you are testing locally:' && echo '> ncat localhost 1337' && echo '
-                    If you are on prod or testing server, here is how you connect:' && echo '> ncat --ssl {subdomain}.{ROOT_DOMAIN} {TCP_SEC_ENTRY}'
-                    """)
-                )
-        elif challenge_obj.deploy == DeployType.KLODD:
+        
+        if challenge_obj.deploy == DeployType.KLODD:
             #TODO: b01lers kube interface would be different, wait for vinh's decision
             (challenge / DEPLOY / KLODD_YAML).write_text(challenge_obj.gen_klodd_challenge())
-            (challenge / RUN_SH).write_text(dedent(
-                f"""
-                #!/bin/sh
-                cd deploy && sudo docker build . -t{challenge_obj.name} && sudo -E docker push {challenge_obj.registry}/{challenge_obj.name} && kubectl create -f challenge.yml
-                """)
-            )
-
-        make_file_executable(challenge / RUN_SH)
-
-    @staticmethod
-    def has_docker_space_compose() -> bool:
-        """Returns true if `docker compose` works."""
-        import shutil
-        import subprocess
-        if shutil.which("docker-compose"):
-            return False
-
-        try:
-            subprocess.run(
-                ["docker", "compose", "version"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=True,
-            )
-            return True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            return False
 
 class Challenge:
     """Represents a challenge object"""
@@ -492,6 +438,33 @@ This README was autogenerated by `mkchal.py`, but written by Neil (CygnusX). Sug
 
         assert self.type == ChallengeType.PWN
         return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / BUILD_DIST, kwargs)
+    
+    def gen_run_sh(self):
+        safe_name = ChallengeUtils.safe_name(self.name)
+        subdomain = ChallengeUtils.generate_service_name(safe_name)
+        kwargs = {
+            "name": safe_name,
+            "remote_command": (
+                f"curl https://{subdomain}.{ROOT_DOMAIN}"
+                if self.type == ChallengeType.WEB 
+                else f"ncat --ssl {subdomain}.{ROOT_DOMAIN} {TCP_SEC_ENTRY}"
+            )
+        }
+        if self.type == ChallengeType.WEB and self.deploy == DeployType.KLODD:
+                return ChallengeUtils.generate_file_content(TEMPLATES_DIR / self.type.value / "klodd" / RUN_SH, kwargs)
+        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / RUN_SH, kwargs)
+    
+    def gen_dev_sh(self):
+        safe_name = ChallengeUtils.safe_name(self.name)
+        kwargs = {
+            "name": safe_name,
+            "local_command": (
+                "curl http://localhost:1337"
+                if self.type == ChallengeType.WEB 
+                else "ncat localhost 1337"
+            )
+        }
+        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / DEV_SH, kwargs)
     
     def create(self) -> bool:
         """Creates the challenge structure for a challenge"""
