@@ -18,6 +18,8 @@ services:
             - "traefik.tcp.routers.${{COMPOSE_PROJECT_NAME}}.entrypoints=ncsecure"
             - "traefik.tcp.routers.${{COMPOSE_PROJECT_NAME}}.service=${{COMPOSE_PROJECT_NAME}}-svc"
             - "traefik.tcp.services.${{COMPOSE_PROJECT_NAME}}-svc.loadbalancer.server.port={port}"
+        ports:
+            - "1337:{port}"
     
     build: # build system for your challenge.
         user: "${{USER_ID}}:${{GROUP_ID}}"
