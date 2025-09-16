@@ -192,7 +192,7 @@ class ChallengeUtils:
             # special build Dockerfile and redpwn jail for pwn
             (challenge / SRC / SAMPLE_C).write_text(challenge_obj.gen_sample())
             (challenge / SRC / BUILD_SH).write_text(challenge_obj.gen_pwn_build_script())
-            make_file_executable(challenge / SRC /BUILD_SH)
+            make_file_executable(challenge / SRC / BUILD_SH)
             (challenge / DEPLOY / DOCKERFILE_BUILD).write_text(challenge_obj.gen_pwn_dockerfile_build())
 
             # for now pwn only support docker-compose
