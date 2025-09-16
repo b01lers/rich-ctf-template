@@ -1,3 +1,4 @@
+name: {name}
 services:
     {name}:
         container_name: {hash}
@@ -12,13 +13,13 @@ services:
         expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
-            - "traefik.http.routers.${{CHALL_HASH}}.rule=Host(`${{CHALL_HASH}}.{root_domain}`)"
-            - "traefik.http.services.${{CHALL_HASH}}.loadbalancer.server.port={port}" # should match the exposed port
-            - "traefik.http.routers.${{CHALL_HASH}}.tls={{}}"
-            - "traefik.http.routers.${{CHALL_HASH}}.entrypoints=websecure"
+            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.rule=Host(`${{COMPOSE_PROJECT_NAME}}.{root_domain}`)"
+            - "traefik.http.services.${{COMPOSE_PROJECT_NAME}}.loadbalancer.server.port={port}" # should match the exposed port
+            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.tls={{}}"
+            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.entrypoints=websecure"
             # Delete this line, edit and uncomment the lines below to configure rate limiting for your service
             # - "traefik.http.middlewares.fluf.ratelimit.average=100"
-            # - "traefik.http.routers.${{CHALL_HASH}}.middlewares=fluf"  
+            # - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.middlewares=fluf"  
             # - "traefik.http.middlewares.fluf.ratelimit.burst=100"
         ports: # please comment the ports field out when you are done.
             - "1337:{port}"

@@ -202,7 +202,7 @@ class ChallengeUtils:
             (challenge / RUN_SH).write_text(
                 dedent(f"""
                 #!/bin/sh
-                cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build {challenge_obj.name} && echo '
+                cd deploy && sudo {compose_command} up -d --build {challenge_obj.name} && echo '
                 
                 
                 If you are testing locally:' && echo '> ncat localhost 1337' && echo '
@@ -219,7 +219,7 @@ class ChallengeUtils:
             if challenge_obj.type == ChallengeType.WEB:
                 (challenge / RUN_SH).write_text(dedent(
                     f"""#!/bin/sh
-                    cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build && echo '
+                    cd deploy && sudo {compose_command} up -d --build && echo '
                     
                     
                     If you are testing locally:' && echo '> curl http://localhost:1337' && echo '
@@ -230,7 +230,7 @@ class ChallengeUtils:
                 (challenge / RUN_SH).write_text(dedent(
                     f"""
                     #!/bin/sh
-                    cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build {challenge_obj.name} && echo '
+                    cd deploy && sudo {compose_command} up -d --build {challenge_obj.name} && echo '
                     
                     
                     If you are testing locally:' && echo '> ncat localhost 1337' && echo '
@@ -243,8 +243,7 @@ class ChallengeUtils:
             (challenge / RUN_SH).write_text(dedent(
                 f"""
                 #!/bin/sh
-                export CHALL_HASH='{challenge_obj.name}' # please leave this line in
-                cd deploy && sudo -E docker build . -t{challenge_obj.name} && sudo -E docker push {challenge_obj.registry}/{challenge_obj.name} && kubectl create -f challenge.yml
+                cd deploy && sudo docker build . -t{challenge_obj.name} && sudo -E docker push {challenge_obj.registry}/{challenge_obj.name} && kubectl create -f challenge.yml
                 """)
             )
 
