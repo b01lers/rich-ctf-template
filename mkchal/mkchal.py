@@ -281,6 +281,7 @@ class Challenge:
         """
         if self.deploy != DeployType.NO_DEPLOY:
             ret += """\n └── run.sh ── what will be run to deploy your challenge"""
+            ret += """\n └── dev.sh ── what you should use to test your challenge"""
         ret += """\n```"""
         ret += f"""\n## Quickstart to challenge development 
 Make sure you develop your challenge on a new branch. You can create one with
@@ -311,7 +312,7 @@ You should keep this structure the same when you add your challenge as it is imp
 
  - `./build_dist.sh` will build your challenge and copy the executable and libc to dist.
 
- - `./run.sh` will run your challenge using the binary in dist.
+ - `./dev.sh` will run your challenge using the binary in dist.
 
 """
 
@@ -329,10 +330,10 @@ Contains files distributed to competitors. If multiple files are included, bundl
 Contains the challenge's writeup and solution scripts. A well-documented writeup is crucial for assessing challenge quality. 
 ### {self.name}/src 
 Contains the challenge source files. If deployment is required, the `Dockerfile` should use this folder to build the challenge. Ensure all necessary files are included for proper functionality.
-### {self.name}/run.sh 
+### {self.name}/dev.sh 
 **IMPORTANT**: If your challenge is not deployed via Klodd, ensure it can be fully deployed by running:
 ```bash
-./run.sh
+./dev.sh
 ```
 ## Merging 
 Once your challenge is complete, submit a **Pull Request (PR)**. The PR will be merged after a quality review on GitHub.
