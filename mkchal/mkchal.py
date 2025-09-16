@@ -192,6 +192,7 @@ class ChallengeUtils:
             # special build Dockerfile and redpwn jail for pwn
             (challenge / SRC / SAMPLE_C).write_text(challenge_obj.gen_sample())
             (challenge / SRC / BUILD_SH).write_text(challenge_obj.gen_pwn_build_script())
+            make_file_executable(challenge / SRC / BUILD_SH)
             (challenge / DEPLOY / DOCKERFILE_BUILD).write_text(challenge_obj.gen_pwn_dockerfile_build())
 
             # for now pwn only support docker-compose
@@ -199,6 +200,7 @@ class ChallengeUtils:
             subdomain = ChallengeUtils.generate_service_name(challenge_obj.name)
             (challenge / DEPLOY / COMPOSE).write_text(challenge_obj.gen_docker_compose())
             (challenge / BUILD_DIST).write_text(challenge_obj.gen_pwn_build_dist())
+            make_file_executable(challenge / BUILD_DIST)
             (challenge / RUN_SH).write_text(
                 dedent(f"""
                 #!/bin/sh

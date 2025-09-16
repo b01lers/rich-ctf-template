@@ -23,4 +23,5 @@ RUN chmod +x /home/$USER/build.sh
 # Also copy the libc if it is needed by the challenge, remove that line if you don't need it
 CMD /home/$USER/build.sh && \
 	cp /home/$USER/chall /dist/chall && \
-	cp /lib/x86_64-linux-gnu/libc.so.6 /dist/libc.so.6
+	cp /lib/x86_64-linux-gnu/libc.so.6 /dist/libc.so.6 && \
+	cp /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /dist/ld-linux-x86-64.so.2
