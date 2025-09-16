@@ -4,14 +4,12 @@ from re import match, sub
 from pathlib import Path
 from json import dumps, loads
 from secrets import token_hex
-from os import path as os_path
-from os import getenv
 import os
 import stat
 
 
 # Infra constants
-ROOT_DOMAIN = getenv("ROOT_DOMAIN", "b01le.rs") # TODO: make it compliant with the testing workflow and VPS
+ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs") # TODO: make it compliant with the testing workflow and VPS
 HTTP_ENTRY = 443
 TCP_SEC_ENTRY = 8443
 DOCKER_REGISTRY = "localhost:5000"
@@ -39,7 +37,7 @@ README = "README.md"
 FLAG = "flag.txt"
 
 # the current path this script is running in
-CONTEXT = Path(os_path.dirname(os_path.dirname(os_path.abspath(__file__))))
+CONTEXT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # where the challenge category and folders will go
 SRC_DIR = CONTEXT / "src"
