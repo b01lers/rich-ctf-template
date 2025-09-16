@@ -1,0 +1,12 @@
+# Do not modify this
+services:
+  chall:
+    ports: !reset []
+    networks: 
+      - traefuck
+    restart: always
+networks:
+  traefuck:
+    name: traefuck
+    external: true     
+     

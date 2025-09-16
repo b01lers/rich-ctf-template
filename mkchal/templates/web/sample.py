@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     with open("./flag.txt", "r") as f:
-        file =  f.read()
+        file = f.read()
     return "Hello I am challenge: {name} and my flag is " + file
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 name: {name}
 services:
-    {name}:
+    chall:
         container_name: {hash}
         privileged: true # needed for redpwn jail to work
         build:
@@ -9,8 +9,6 @@ services:
         logging:
             driver: "json-file"
         restart: always
-        networks:
-            - traefuck
         expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
         labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
@@ -20,10 +18,10 @@ services:
             - "traefik.tcp.routers.${{COMPOSE_PROJECT_NAME}}.entrypoints=ncsecure"
             - "traefik.tcp.routers.${{COMPOSE_PROJECT_NAME}}.service=${{COMPOSE_PROJECT_NAME}}-svc"
             - "traefik.tcp.services.${{COMPOSE_PROJECT_NAME}}-svc.loadbalancer.server.port={port}"
-        ports: # please comment this whole ports field out when you are ready to make PR.
+        ports:
             - "1337:{port}"
     
-    {name}_build: # build system for your challenge.
+    build: # build system for your challenge.
         user: "${{USER_ID}}:${{GROUP_ID}}"
         container_name: {hash}_build
         build:
@@ -33,10 +31,3 @@ services:
             driver: "json-file"
         volumes:
             - ../dist:/dist
-
-
-networks:
-  traefuck:
-    name: traefuck
-    # please uncomment the below line when making a pr
-    # external: true     
