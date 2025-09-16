@@ -6,6 +6,8 @@ from json import dumps, loads
 from secrets import token_hex
 from os import path as os_path
 from os import getenv
+import os
+import stat
 
 
 # Infra constants
@@ -88,6 +90,10 @@ class DeployType(str, Enum):
     NO_DEPLOY = "none"
 
 SPECIAL_CHAL_TYPES = (ChallengeType.WEB, ChallengeType.PWN)
+
+def make_file_executable(path: Path):
+    st = os.stat(path)
+    os.chmod(path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 class ChallengeUtils:
 
@@ -197,7 +203,7 @@ class ChallengeUtils:
             (challenge / BUILD_DIST).write_text(challenge_obj.gen_pwn_build_dist())
             (challenge / RUN_SH).write_text(
                 dedent(f"""
-                #!/bin/bash
+                #!/bin/sh
                 cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build {challenge_obj.name} && echo '
                 
                 
@@ -205,14 +211,16 @@ class ChallengeUtils:
                 If you are on prod or testing server, here is how you connect:' && echo '> ncat --ssl {subdomain}.{ROOT_DOMAIN} {TCP_SEC_ENTRY}'
                 """)
             )
+            make_file_executable(challenge / RUN_SH)
             return
+
         (challenge / SRC / SAMPLE_PY).write_text(challenge_obj.gen_sample())
         if challenge_obj.deploy == DeployType.DOCKER_COMPOSE:
             subdomain = ChallengeUtils.generate_service_name(challenge_obj.name)
             (challenge / DEPLOY / COMPOSE).write_text(challenge_obj.gen_docker_compose())
             if challenge_obj.type == ChallengeType.WEB:
                 (challenge / RUN_SH).write_text(dedent(
-                    f"""#!/bin/bash
+                    f"""#!/bin/sh
                     cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build && echo '
                     
                     
@@ -223,7 +231,7 @@ class ChallengeUtils:
             else:
                 (challenge / RUN_SH).write_text(dedent(
                     f"""
-                    #!/bin/bash
+                    #!/bin/sh
                     cd deploy && sudo -E env CHALL_HASH='{subdomain}' {compose_command} up -d --build {challenge_obj.name} && echo '
                     
                     
@@ -236,11 +244,13 @@ class ChallengeUtils:
             (challenge / DEPLOY / KLODD_YAML).write_text(challenge_obj.gen_klodd_challenge())
             (challenge / RUN_SH).write_text(dedent(
                 f"""
-                #!/bin/bash
+                #!/bin/sh
                 export CHALL_HASH='{challenge_obj.name}' # please leave this line in
                 cd deploy && sudo -E docker build . -t{challenge_obj.name} && sudo -E docker push {challenge_obj.registry}/{challenge_obj.name} && kubectl create -f challenge.yml
                 """)
             )
+
+        make_file_executable(challenge / RUN_SH)
 
     @staticmethod
     def has_docker_space_compose() -> bool:
