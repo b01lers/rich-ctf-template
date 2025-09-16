@@ -7,7 +7,7 @@ services:
             context: ../
         logging:
             driver: "json-file"
-        restart: always # please keep this in
+        restart: always
         networks:
             - traefuck
         expose: # This should be the port your challenge runs on inside the container.
@@ -34,7 +34,7 @@ services:
             - ../dist:/dist
 
 
-networks: # Do not delete this
+networks:
   traefuck:
     name: traefuck
     # please uncomment the below line when making a pr
