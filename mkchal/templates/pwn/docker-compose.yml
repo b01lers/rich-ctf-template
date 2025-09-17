@@ -8,6 +8,8 @@ services:
             context: ../
         logging:
             driver: "json-file"
+            max-size: "50k"
+            max-file: "3"
         restart: always
         expose: # This should be the port your challenge runs on inside the container.
             - "{port}"
