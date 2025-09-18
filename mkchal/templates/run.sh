@@ -3,7 +3,7 @@ set -e
 cd -- "$(dirname -- "$0")/deploy"
 if [ -f docker-compose.prod.yml ]; then
 	docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build chall
-else 
+else
 	docker compose up -d --build chall
 fi
 echo '

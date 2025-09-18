@@ -11,7 +11,7 @@ from secrets import token_hex
 # Infra constants
 ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs") # TODO: make it compliant with the testing workflow and VPS
 HTTP_ENTRY = 443
-TCP_SEC_ENTRY = 8443
+TCP_SEC_ENTRY = 1337
 DOCKER_REGISTRY = "localhost:5000"
 
 # Default challenge directories
