@@ -345,7 +345,7 @@ class Challenge:
         ret += f"""\n## Quickstart to challenge development
 Make sure you develop your challenge on a new branch. You can create one with
 ```bash
-git checkout -b {self.name}_{self.author}
+git switch -c {self.name}_{self.author}
 ```"""
         if self.deploy == DeployType.DOCKER_COMPOSE:
             ret += f"""\n### {self.name}/deploy
@@ -640,7 +640,7 @@ if __name__ == "__main__":
     conflict = ChallengeUtils.generate(c)
     if conflict:
         print(
-            f"Done. Run `git checkout -b {c.name}_{c.author}` to switch to a branch and start working."
+            f"Done. Run `git switch -c {c.name}_{c.author}` to switch to a branch and start working."
         )
     else:
         print("Error: Failed to create challenge.")
