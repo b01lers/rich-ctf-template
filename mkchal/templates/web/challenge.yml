@@ -7,7 +7,7 @@ spec:
   timeout: 1000000 # Each instance will be stopped after this many milliseconds.
   pods:
     - name: app # the name of the pod, ensure this and expose.pod match
-      ports: 
+      ports:
         - port: {port} # listed port inside the container, ensure this matches the exposed port
       spec:
         containers:

@@ -2,11 +2,10 @@
 services:
   chall:
     ports: !reset []
-    networks: 
+    networks:
       - traefuck
     restart: always
 networks:
   traefuck:
     name: traefuck
-    external: true     
-     
+    external: true
