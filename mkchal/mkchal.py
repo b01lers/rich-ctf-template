@@ -167,7 +167,7 @@ class ChallengeUtils:
     def safe_name(name: str) -> str:
         """Creates a safe name for docker services"""
         
-        return sub(r"^-+|-+$", "", sub(r"[^a-z0-9-]", "", name.lower()))
+        return sub(r"^-+|-+$", "", sub(r"[^a-z0-9-]", "", sub(" ", "-", name.lower())))
     
     @staticmethod
     def __generate_defaults(challenge_obj: Challenge, challenge: Path) -> None:
