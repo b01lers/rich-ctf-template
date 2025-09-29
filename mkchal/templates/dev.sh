@@ -11,7 +11,7 @@ else
 fi
 
 cd -- "$(dirname -- "$0")/deploy"
-"$runner" compose up -d --build chall
+$runner compose up -d --build chall
 echo '
 
 

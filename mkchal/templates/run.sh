@@ -12,9 +12,9 @@ else
 fi
 
 if [ -f docker-compose.prod.yml ]; then
-	"$runner" compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build chall
+	$runner compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build chall
 else
-	"$runner" compose up -d --build chall
+	$runner compose up -d --build chall
 fi
 echo '
 
