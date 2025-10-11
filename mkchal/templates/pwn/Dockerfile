@@ -15,7 +15,7 @@ RUN chmod +x /app/run
 
 # This example copies a prebuild binary into home directory
 # The binary can be built by running the ./deploy/build.sh script
-COPY ./dist/chall /app/chall
+COPY ./build_out/chall /app/chall
 RUN chmod +x /app/chall
 
 # We don't want to forget the flag!

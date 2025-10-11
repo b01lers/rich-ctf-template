@@ -33,4 +33,19 @@ services:
         logging:
             driver: "json-file"
         volumes:
-            - ../dist:/dist
+            - ../build_out:/build_out
+    
+    libc: # copies libc and linker out of real challenge.
+        user: "${{USER_ID}}:${{GROUP_ID}}"
+        container_name: {hash}_libc
+        build:
+            dockerfile: ./deploy/Dockerfile
+            context: ../
+        logging:
+            driver: "json-file"
+        volumes:
+            - ../build_out:/build_out
+        entrypoint: ["/bin/sh", "-c"]
+        command: [
+            "cp ${{LIBC_PATH}} /build_out/libc.so.6 && cp ${{LINKER_PATH}} /build_out/ld-linux-x86-64.so.2",
+        ]
