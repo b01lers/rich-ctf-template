@@ -71,6 +71,7 @@ class ChallengeType(str, Enum):
     MISC = "misc"
     BLOCKCHAIN = "blockchain"
     OSINT = "osint"
+    JAIL = "jail"
 
 
 class ChallengeDifficulty(str, Enum):
@@ -150,6 +151,7 @@ class ChallengeUtils:
             "web": {},
             "misc": {},
             "osint": {},
+            "jail": {},
         }
         for dir in SRC_DIR.iterdir():
             if dir.is_dir() and dir.name in d.keys():
