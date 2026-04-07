@@ -2,7 +2,7 @@
 set -e
 
 if command -v docker >/dev/null 2>&1; then
-    runner="sudo docker"
+    runner="docker"
 elif command -v podman >/dev/null 2>&1; then
     runner="podman"
 else

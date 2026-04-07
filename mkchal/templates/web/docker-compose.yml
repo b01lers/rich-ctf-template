@@ -2,24 +2,13 @@ name: {name}
 services:
     chall:
         container_name: {hash}
-        build:
-            dockerfile: ./deploy/Dockerfile
-            context: ../
+        build: ../src
         logging:
             driver: "json-file"
             options:
                 max-size: "50k"
                 max-file: "3"
-        expose: # This should be the port your challenge runs on inside the container.
+        expose:
             - "{port}"
-        labels: # please do not delete these labels, if you have a second service make sure the service name and port are replaced
-            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.rule=Host(`${{COMPOSE_PROJECT_NAME}}.{root_domain}`)"
-            - "traefik.http.services.${{COMPOSE_PROJECT_NAME}}.loadbalancer.server.port={port}" # should match the exposed port
-            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.tls={{}}"
-            - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.entrypoints=websecure"
-            # Delete this line, edit and uncomment the lines below to configure rate limiting for your service
-            # - "traefik.http.middlewares.ffuf-${{COMPOSE_PROJECT_NAME}}.ratelimit.average=100"
-            # - "traefik.http.routers.${{COMPOSE_PROJECT_NAME}}.middlewares=ffuf-${{COMPOSE_PROJECT_NAME}}"
-            # - "traefik.http.middlewares.ffuf-${{COMPOSE_PROJECT_NAME}}.ratelimit.burst=100"
         ports:
             - "1337:{port}"

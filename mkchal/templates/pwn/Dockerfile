@@ -10,7 +10,7 @@ apt-get install -y socat
 # wrapper.sh wraps the executable by
 # performing any necessary setup
 # this has to be called /app/run for redpwn jail to work
-COPY ./deploy/wrapper.sh /app/run
+COPY ./src/wrapper.sh /app/run
 RUN chmod +x /app/run
 
 # This example copies a prebuild binary into home directory
@@ -19,7 +19,7 @@ COPY ./build_out/chall /app/chall
 RUN chmod +x /app/chall
 
 # We don't want to forget the flag!
-COPY ./flag.txt /app/flag.txt
+COPY ./src/flag.txt /app/flag.txt
 
 # this container runs the redpwn jail
 FROM pwn.red/jail

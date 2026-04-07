@@ -1,3 +1,2 @@
 #!/bin/bash
-
-cd /home/{name} && python3 sample.py
+python3 sample.py
