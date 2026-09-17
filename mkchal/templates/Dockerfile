@@ -5,14 +5,11 @@ FROM python:3.13-slim-bookworm
 # Install any software to build the challenge
 
 RUN apt-get update && \
-apt-get install -y socat
+	apt-get install -y socat
 
 ENV USER={name}
 WORKDIR /home/$USER
 RUN useradd $USER
-
-# wrapper.sh wraps the executable
-COPY wrapper.sh /home/$USER/
 
 # This example runs a python script named sample.py
 # This works with compiled binaries, just make sure to
@@ -31,5 +28,5 @@ RUN chmod -x /home/$USER/flag.txt
 # Whatever port you configure in the socat command
 EXPOSE {port}
 
-# Serves wrapper.sh which wraps the sample python file
-CMD socat TCP-LISTEN:{port},reuseaddr,fork EXEC:"/home/$USER/wrapper.sh"
+# Serve the challenge
+CMD socat TCP-LISTEN:{port},reuseaddr,fork EXEC:"python3 sample.py"

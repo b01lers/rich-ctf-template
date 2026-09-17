@@ -1,0 +1,16 @@
+    base:
+        profiles: ["build"]
+        image: {hash}-base
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: base
+
+    builder:
+        profiles: ["build"]
+        image: {hash}-builder
+        build:
+            context: .
+            dockerfile: Dockerfile_build
+            additional_contexts:
+                base_image: "service:base"

@@ -1,28 +1,19 @@
-# Standard debian instance, pin specific version to avoid breaking libc changes and such
-FROM --platform=linux/amd64 debian@sha256:4abf773f2a570e6873259c4e3ba16de6c6268fb571fd46ec80be7c67822823b3 AS safe_{name}_inner_container
+# Pin the base used by both the runtime and optional Dockerfile_build.
+FROM --platform=linux/amd64 debian@sha256:4abf773f2a570e6873259c4e3ba16de6c6268fb571fd46ec80be7c67822823b3 AS base
 
-# Install any software to run the challenge
-# Build tools should be installed in Dockerfile_build
+WORKDIR /app
 
-RUN apt-get update && \
-apt-get install -y socat
+FROM base AS safe_{name}_inner_container
 
-# wrapper.sh wraps the executable by
-# performing any necessary setup
-# this has to be called /app/run for redpwn jail to work
-COPY ./src/wrapper.sh /app/run
-RUN chmod +x /app/run
-
-# This example copies a prebuild binary into home directory
-# The binary can be built by running the ./deploy/build.sh script
-COPY ./build_out/chall /app/chall
-RUN chmod +x /app/chall
-
-# We don't want to forget the flag!
-COPY ./src/flag.txt /app/flag.txt
+# redpwn jail executes /app/run. Build it explicitly with ./build.sh,
+# or provide your own chall file before building the runtime image.
+COPY chall /app/run
+COPY flag.txt /app/flag.txt
+RUN chmod 555 /app/run && chmod 444 /app/flag.txt
 
 # this container runs the redpwn jail
 FROM pwn.red/jail
+WORKDIR /app
 
 # copy challenge container files to /srv
 # /srv will be all files in the jail

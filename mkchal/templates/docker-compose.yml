@@ -2,7 +2,7 @@ name: {name}
 services:
     chall:
         container_name: {hash}
-        build: ../src
+{privileged}        build: .
         logging:
             driver: "json-file"
             options:
@@ -12,3 +12,4 @@ services:
             - "{port}"
         ports:
             - "1337:{port}"
+{build_services}

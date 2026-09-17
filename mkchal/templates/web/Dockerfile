@@ -10,9 +10,6 @@ ENV USER={name}
 WORKDIR /home/$USER
 RUN useradd $USER
 
-# wrapper.sh wraps the executable
-COPY wrapper.sh /home/$USER/
-
 # This example runs a python script named sample.py
 # This works with compiled binaries, just make sure to
 # install necessary software and use a Makefile inside the container.
@@ -32,5 +29,4 @@ RUN chmod -x /home/$USER/flag.txt
 # The passthrough port in docker-compose.yml below.
 EXPOSE {port}
 
-# Serves wrapper.sh which wraps the sample python file
-CMD "/home/$USER/wrapper.sh"
+CMD ["python3", "sample.py"]

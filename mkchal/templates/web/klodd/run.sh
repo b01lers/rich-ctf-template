@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-cd deploy
-sudo docker build . -t '{name}'
+cd -- "$(dirname -- "$0")"
+sudo docker build src -t '{name}'
 sudo -E docker push '{registry}/{name}'
-kubectl create -f challenge.yml
+kubectl create -f deploy/challenge.yml

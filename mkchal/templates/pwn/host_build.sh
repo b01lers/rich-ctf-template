@@ -1,11 +1,7 @@
 #!/bin/sh
-set -e
+set -eu
 
 challenge_root="$(cd -- "$(dirname -- "$0")" && pwd)"
-
-if [ -x "$challenge_root/build.sh" ]; then
-    "$challenge_root/build.sh"
-fi
 
 if command -v docker >/dev/null 2>&1; then
     runner="docker"
@@ -17,9 +13,8 @@ else
 fi
 
 cd -- "$challenge_root/src"
-$runner compose up -d --build chall
-echo '
-
-
-If you are testing locally:
-> {local_command}'
+"$runner" compose --profile build build builder
+"$runner" compose --profile build run --rm --no-deps \
+    --user "$(id -u):$(id -g)" \
+    --volume "$PWD:/out" \
+    builder
