@@ -5,7 +5,7 @@ violations = 0
 
 context_dir = Path(".") / "src"
 for dir in context_dir.iterdir():
-    if dir.is_dir() and dir.name in ["rev", "web", "pwn", "misc", "blockchain", "osint", "crypto"]:
+    if dir.is_dir() and dir.name in ["rev", "web", "pwn", "misc", "blockchain", "osint", "crypto", "jail"]:
         for challenge in dir.iterdir():
             try:
                 chal_json = loads((challenge / "chal.json").read_text())
