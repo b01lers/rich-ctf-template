@@ -90,8 +90,8 @@ class Challenge(msgspec.Struct, kw_only=True, omit_defaults=True, frozen=True):
     tags: list[str] | None = None
 
     def __post_init__(self) -> None:
-        if re.match(r"^bctf\{.*\}$", self.flag) is None:
-            raise ValueError(r"Flag does not match ^bctf\{.*\}$")
+        if re.fullmatch(r"bctf\{[^}]*\}", self.flag) is None:
+            raise ValueError(r"Flag does not match bctf\{[^}]*\}")
 
     def formatted(self) -> str:
         encoded = msgspec.json.encode(self)
