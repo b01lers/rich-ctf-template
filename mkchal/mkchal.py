@@ -1,3 +1,13 @@
+#!/usr/bin/env -S uv run --script
+#
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#    "jinja2>=3.1.6",
+#    "msgspec>=0.21.1",
+#    "rich>=15.0.0",
+# ]
+# ///
 import argparse
 import os
 import re
