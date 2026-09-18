@@ -1,0 +1,16 @@
+    base:
+        profiles: ["build"]
+        image: {{ project.safe_name }}-base
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: base
+
+    builder:
+        profiles: ["build"]
+        image: {{ project.safe_name }}-builder
+        build:
+            context: .
+            dockerfile: build.Dockerfile
+            additional_contexts:
+                base_image: "service:base"

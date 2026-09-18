@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+challenge_root="$(cd -- "$(dirname -- "$0")" && pwd)"
+
+if [ -x "$challenge_root/build.sh" ]; then
+    "$challenge_root/build.sh"
+fi
+
+if command -v docker >/dev/null 2>&1; then
+    runner="docker"
+elif command -v podman >/dev/null 2>&1; then
+    runner="podman"
+else
+    echo "Docker/Podman not found"
+    exit 1
+fi
+
+cd -- "$challenge_root/src"
+$runner compose up -d --build chall
+echo '
+
+
+If you are testing locally:
+> {% if project.category.value == "web" %}curl http://localhost:{{ project.port }}{% else %}ncat localhost {{ project.port }}{% endif %}'

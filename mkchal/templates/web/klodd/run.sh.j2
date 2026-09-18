@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+cd -- "$(dirname -- "$0")"
+sudo docker build src -t '{{ project.safe_name }}'
+sudo -E docker push '{{ project.image }}'
+kubectl create -f deploy/challenge.yml

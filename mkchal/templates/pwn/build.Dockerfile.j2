@@ -1,0 +1,11 @@
+FROM base_image
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libc6-dev make && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY . /build/
+RUN ./build.sh && chmod 555 chall
+
+CMD ["/bin/sh", "-c", "cp --remove-destination /build/chall /out/chall"]

@@ -1,0 +1,20 @@
+name: {{ project.safe_name }}
+services:
+    chall:
+        container_name: {{ project.safe_name }}
+{% if project.compiled %}
+        privileged: true # needed for redpwn jail to work
+{% endif %}
+        build: .
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50k"
+                max-file: "3"
+        expose:
+            - "{{ project.port }}"
+        ports:
+            - "1337:{{ project.port }}"
+{% if project.build %}
+{% include "pwn/compose-build-services.yml.j2" %}
+{% endif %}
