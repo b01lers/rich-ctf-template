@@ -22,4 +22,4 @@ echo '
 
 
 If you are testing locally:
-> {local_command}'
+> {% if project.category.value == "web" %}curl http://localhost:{{ project.port }}{% else %}ncat localhost {{ project.port }}{% endif %}'

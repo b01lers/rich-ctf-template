@@ -1,66 +1,36 @@
-from __future__ import annotations
-
 import argparse
 import os
+import re
 import stat
 import warnings
 from enum import Enum
-from json import dumps, loads
 from pathlib import Path
-from re import match, sub
 
-# Infra constants
-ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs")  # TODO: make it compliant with the testing workflow and VPS
-HTTP_ENTRY = 443
-TCP_SEC_ENTRY = 1337
+import msgspec
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
+
+ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs")
 DOCKER_REGISTRY = "localhost:5000"
 
-# Default challenge directories
-SRC = "src"
-DEPLOY = "deploy"
-DIST = "dist"
-SOLVE = "solve"
+SRC = Path("src")
+DEPLOY = Path("deploy")
+DIST = Path("dist")
+SOLVE = Path("solve")
 
-
-# Default challenge filenames
-CHAL_JSON = "chal.json"
-DOCKERFILE = "Dockerfile"
-COMPOSE = "docker-compose.yml"
-SAMPLE_PY = "sample.py"
-SAMPLE_C = "sample.c"
-KLODD_YAML = "challenge.yml"
-BUILD_SH = "build.sh"
-HOST_BUILD_TEMPLATE = "host_build.sh"
-DOCKERFILE_BUILD = "Dockerfile_build"
-DEV_SH = "dev.sh"
-RUN_SH = "run.sh"
-README = "README.md"
-FLAG = "flag.txt"
-
-# the current path this script is running in
-CONTEXT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# where the challenge category and folders will go
-SRC_DIR = CONTEXT / "src"
-
-# location of the templates directory
+CONTEXT = Path(__file__).resolve().parent.parent
+SRC_DIR = CONTEXT / SRC
 TEMPLATES_DIR = CONTEXT / "mkchal" / "templates"
 
-# location of the pwn template directory
-PWN_TEMPLATE_DIR = TEMPLATES_DIR / "pwn"
-
-"""
-Should be in the structure of
-type1: [chal.json1, chal.json2...],
-type2: [...],
-...
-"""
-loaded_challs = {}
-DEBUG = False
+TEMPLATE_ENV = Environment(
+    loader=FileSystemLoader(TEMPLATES_DIR),
+    undefined=StrictUndefined,
+    autoescape=False,
+    keep_trailing_newline=True,
+)
 
 
-class ChallengeType(str, Enum):
-    """Describes a CTF challenge type."""
+class Category(Enum):
+    """Describes a CTF categorye."""
 
     REV = "rev"
     PWN = "pwn"
@@ -72,8 +42,11 @@ class ChallengeType(str, Enum):
     JAIL = "jail"
 
 
-class ChallengeDifficulty(str, Enum):
-    """Describes a CTF challenge difficulty"""
+COMPILED_CHAL_TYPES = (Category.PWN, Category.REV)
+
+
+class ChallengeDifficulty(Enum):
+    """Describes a CTF challenge difficulty."""
 
     EASY = "easy"
     MEDIUM = "medium"
@@ -81,7 +54,7 @@ class ChallengeDifficulty(str, Enum):
     IMPOSSIBLE = "impossible"
 
 
-class DeployType(str, Enum):
+class DeployType(Enum):
     """Describes a deployment type."""
 
     DOCKER_COMPOSE = "docker"
@@ -89,540 +62,262 @@ class DeployType(str, Enum):
     NO_DEPLOY = "none"
 
 
-COMPILED_CHAL_TYPES = (ChallengeType.PWN, ChallengeType.REV)
+class Challenge(msgspec.Struct, kw_only=True, omit_defaults=True, frozen=True):
+    """Challenge metadata written to ``chal.json``."""
+
+    name: str
+    author: str
+    description: str
+    flag: str
+    difficulty: ChallengeDifficulty
+    autodeploy: bool
+    ports: list[int] = msgspec.field(default_factory=list)
+    hidden: bool | None = None
+    minPoints: int | None = None
+    maxPoints: int | None = None
+    tiebreakEligible: bool | None = None
+    prereqs: list[str] | None = None
+    tags: list[str] | None = None
+
+    def __post_init__(self) -> None:
+        if re.match(r"^bctf\{.*\}$", self.flag) is None:
+            raise ValueError(r"Flag does not match ^bctf\{.*\}$")
+
+    def formatted(self) -> str:
+        encoded = msgspec.json.encode(self)
+        return msgspec.json.format(encoded, indent=4).decode() + "\n"
 
 
-def make_file_executable(path: Path):
-    st = os.stat(path)
-    os.chmod(path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+class GeneratedFile(msgspec.Struct, frozen=True):
+    """A template and the directory where its rendered file belongs."""
+
+    source: Path
+    target_directory: Path
+    executable: bool = False
+
+    @property
+    def destination(self) -> Path:
+        return self.target_directory / self.source.name.removesuffix(".j2")
 
 
-def resolve_build_option(challenge_type: ChallengeType, deploy: DeployType, requested: bool) -> bool:
-    """Validate --build for a category and return whether it is enabled."""
+class ChallengeProject(msgspec.Struct, kw_only=True):
+    """A challenge together with the options used to generate its project."""
+
+    challenge: Challenge
+    category: Category
+    deploy: DeployType
+    build: bool = False
+    registry: str = DOCKER_REGISTRY
+    domain: str = ROOT_DOMAIN
+
+    @property
+    def safe_name(self) -> str:
+        return safe_name(self.challenge.name)
+
+    @property
+    def port(self) -> int:
+        return self.challenge.ports[0] if self.challenge.ports else 1337
+
+    @property
+    def compiled(self) -> bool:
+        return self.category in COMPILED_CHAL_TYPES
+
+    @property
+    def deployed(self) -> bool:
+        return self.deploy != DeployType.NO_DEPLOY
+
+    @property
+    def image(self) -> str:
+        return f"{self.registry}/{self.safe_name}"
+
+    @property
+    def template_family(self) -> str:
+        if self.compiled:
+            return "pwn"
+        if self.category == Category.WEB:
+            return "web"
+        return ""
+
+    def generation_manifest(self) -> list[GeneratedFile]:
+        """Return the complete declarative file manifest for ``project``."""
+
+        web = self.category == Category.WEB
+        klodd = self.deploy == DeployType.KLODD
+        source_template = (
+            Path("pwn/sample.c.j2") if self.compiled else Path("web/sample.py.j2") if web else Path("sample.py.j2")
+        )
+        files = [
+            GeneratedFile(Path("README.md.j2"), Path()),
+            GeneratedFile(source_template, SRC),
+        ]
+
+        if self.deployed:
+            template_dir = Path(self.template_family)
+            files.extend(
+                (
+                    GeneratedFile(template_dir / "Dockerfile.j2", SRC),
+                    GeneratedFile(Path("docker-compose.yml.j2"), SRC),
+                    GeneratedFile(Path("dev.sh.j2"), Path(), executable=True),
+                )
+            )
+        if self.build:
+            files.extend(
+                (
+                    GeneratedFile(Path("pwn/host/build.sh.j2"), Path(), executable=True),
+                    GeneratedFile(Path("pwn/build.sh.j2"), SRC, executable=True),
+                    GeneratedFile(Path("pwn/Dockerfile_build.j2"), SRC),
+                )
+            )
+        if klodd:
+            template = Path("web/challenge.yml.j2") if web else Path("challenge.yml.j2")
+            files.append(GeneratedFile(template, DEPLOY))
+        if web and klodd:
+            files.append(GeneratedFile(Path("web/klodd/run.sh.j2"), Path(), executable=True))
+        return files
+
+    def create(self):
+        """Generate a challenge project from its declarative manifest."""
+
+        destination = SRC_DIR / self.category.value / self.challenge.name
+        destination.mkdir(parents=True, exist_ok=True)
+        for directory in (SRC, DIST, SOLVE):
+            (destination / directory).mkdir(parents=True, exist_ok=True)
+
+        for generated_file in self.generation_manifest():
+            output = destination / generated_file.destination
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(render_template(generated_file.source, self), encoding="utf-8")
+            if generated_file.executable:
+                make_file_executable(output)
+        (destination / "chal.json").write_text(self.challenge.formatted(), encoding="utf-8")
+        (destination / SRC / "flag.txt").write_text(self.challenge.flag, encoding="utf-8")
+
+    def check_name_available(self, loaded_challenges: dict[str, dict[str, Challenge]]) -> None:
+        """Check whether the challenge name is available in its category."""
+
+        if not loaded_challenges:
+            raise ValueError("No challs loaded")
+        category = self.category.value
+        for challenge_name in loaded_challenges[category]:
+            if self.safe_name == safe_name(challenge_name):
+                raise ValueError(
+                    f"Name {self.challenge.name} conflicts with challenge {challenge_name} in category {category}"
+                )
+
+
+def make_file_executable(path: Path) -> None:
+    path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def render_template(template: Path, project: ChallengeProject) -> str:
+    return TEMPLATE_ENV.get_template(template.as_posix()).render(challenge=project.challenge, project=project)
+
+
+def safe_name(name: str) -> str:
+    """Create a name safe for paths and Docker resources."""
+
+    return re.sub(r"^-+|-+$", "", re.sub(r"[^a-z0-9-]", "", re.sub(" ", "-", name.lower())))
+
+
+def load_challenges() -> dict[str, dict[str, Challenge]]:
+    """Decode existing metadata directly into ``Challenge`` objects."""
+
+    challenges: dict[str, dict[str, Challenge]] = {category.value: {} for category in Category}
+    for category_dir in SRC_DIR.iterdir():
+        if not category_dir.is_dir() or category_dir.name not in challenges:
+            continue
+        for challenge_dir in category_dir.iterdir():
+            challenge = msgspec.json.decode((challenge_dir / "chal.json").read_bytes(), type=Challenge)
+            challenges[category_dir.name][challenge_dir.name] = challenge
+    return challenges
+
+
+def resolve_build_option(challenge_type: Category, deploy: DeployType, requested: bool) -> bool:
+    """Validate ``--build`` for a category and return whether it is enabled."""
+
     enabled = requested and challenge_type in COMPILED_CHAL_TYPES and deploy != DeployType.NO_DEPLOY
     if requested and challenge_type not in COMPILED_CHAL_TYPES:
         warnings.warn(f"--build is not supported for {challenge_type.value} challenges; ignoring it.")
     elif requested and deploy == DeployType.NO_DEPLOY:
         warnings.warn("--build requires a deployment; ignoring it.")
-    if challenge_type == ChallengeType.PWN and deploy != DeployType.NO_DEPLOY and not enabled:
+    if challenge_type == Category.PWN and deploy != DeployType.NO_DEPLOY and not enabled:
         warnings.warn("pwn challenge generated without --build; provide src/chall before running it.")
     return enabled
 
 
-class ChallengeUtils:
-    @staticmethod
-    def validate_name(challenge: Challenge) -> tuple[bool, str]:
-        """Validates a challenge name"""
-
-        if len(loaded_challs.keys()) < 1:
-            return (False, "Unloaded challs")
-        for chall_name in loaded_challs[challenge.type.value].keys():
-            if ChallengeUtils.safe_name(challenge.name) == ChallengeUtils.safe_name(chall_name):
-                return (
-                    False,
-                    f"Name {challenge.name} conficts with challenge {chall_name} in category {challenge.type.value}",
-                )
-        return True, "success"
-
-    @staticmethod
-    def validate_flag(flag: str) -> bool:
-        """Validates whether a flag fits the required format"""
-
-        return match(r"^bctf\{.*\}$", flag) is not None
-
-    @staticmethod
-    def generate(challenge_obj: Challenge) -> bool:
-        """Generates a challenge. Assumes valid fields"""
-        challenge: Path = SRC_DIR / challenge_obj.type.value / challenge_obj.name
-        challenge.mkdir(parents=True, exist_ok=DEBUG)
-        ChallengeUtils.__generate_defaults(challenge_obj, challenge)
-        ChallengeUtils.__generate_sources(challenge_obj, challenge)
-        ChallengeUtils.__generate_deployments(challenge_obj, challenge)
-        return True
-
-    @staticmethod
-    def retrieve_valid_port(type: ChallengeType) -> tuple[bool, int]:
-        """returns: (success, port)"""
-        # TODO create server on b01lers server that generates a valid port
-        # We let the user choose a port for now, with traefik this shouldn't be needed
-        return False, 0
-
-    @staticmethod
-    def load_challenges() -> dict:
-        """
-        Loads all currently created challenges into a dict.
-        Assumes proper directory structure.
-        """
-
-        d: dict = {
-            "rev": {},
-            "pwn": {},
-            "crypto": {},
-            "blockchain": {},
-            "web": {},
-            "misc": {},
-            "osint": {},
-            "jail": {},
-        }
-        for dir in SRC_DIR.iterdir():
-            if dir.is_dir() and dir.name in d.keys():
-                for challenge in dir.iterdir():
-                    d[dir.name][challenge.name] = loads((challenge / CHAL_JSON).read_text())
-        return d
-
-    @staticmethod
-    def generate_service_name(name: str) -> str:
-        """Ensures uniqueness between challenge service names"""
-        return f"{name}"
-
-    @staticmethod
-    def generate_file_content(filename: Path, kwargs: dict) -> str:
-        """generates the sample file content for a template file"""
-
-        return filename.read_text().format(**kwargs)
-
-    @staticmethod
-    def safe_name(name: str) -> str:
-        """Creates a safe name for docker services"""
-
-        return sub(r"^-+|-+$", "", sub(r"[^a-z0-9-]", "", sub(" ", "-", name.lower())))
-
-    @staticmethod
-    def __generate_defaults(challenge_obj: Challenge, challenge: Path) -> None:
-        (challenge / SRC).mkdir(parents=True, exist_ok=DEBUG)
-        (challenge / DIST).mkdir(parents=True, exist_ok=DEBUG)
-        (challenge / SOLVE).mkdir(parents=True, exist_ok=DEBUG)
-        (challenge / README).write_text(challenge_obj.gen_readme(), encoding="utf-8")
-        (challenge / CHAL_JSON).write_text(str(challenge_obj), encoding="utf-8")
-        (challenge / SRC / FLAG).write_text(challenge_obj.flag, encoding="utf-8")
-
-    @staticmethod
-    def __generate_sources(challenge_obj: Challenge, challenge: Path) -> None:
-        if challenge_obj.type in COMPILED_CHAL_TYPES:
-            (challenge / SRC / SAMPLE_C).write_text(challenge_obj.gen_sample(), encoding="utf-8")
-        else:
-            (challenge / SRC / SAMPLE_PY).write_text(challenge_obj.gen_sample(), encoding="utf-8")
-
-        if challenge_obj.build:
-            (challenge / BUILD_SH).write_text(challenge_obj.gen_build_script(), encoding="utf-8")
-            make_file_executable(challenge / BUILD_SH)
-            (challenge / SRC / BUILD_SH).write_text(
-                challenge_obj.gen_source_build_script(),
-                encoding="utf-8",
-            )
-            make_file_executable(challenge / SRC / BUILD_SH)
-            (challenge / SRC / DOCKERFILE_BUILD).write_text(
-                challenge_obj.gen_dockerfile_build(),
-                encoding="utf-8",
-            )
-
-    @staticmethod
-    def __generate_deployments(challenge_obj: Challenge, challenge: Path) -> None:
-        if challenge_obj.deploy == DeployType.NO_DEPLOY:
-            return
-
-        (challenge / SRC / DOCKERFILE).write_text(challenge_obj.gen_dockerfile(), encoding="utf-8")
-        (challenge / SRC / COMPOSE).write_text(challenge_obj.gen_docker_compose(), encoding="utf-8")
-
-        (challenge / DEV_SH).write_text(challenge_obj.gen_dev_sh(), encoding="utf-8")
-        make_file_executable(challenge / DEV_SH)
-
-        if challenge_obj.deploy == DeployType.KLODD:
-            (challenge / DEPLOY).mkdir(parents=True, exist_ok=DEBUG)
-            # TODO: b01lers kube interface would be different, wait for vinh's decision
-            (challenge / DEPLOY / KLODD_YAML).write_text(
-                challenge_obj.gen_klodd_challenge(),
-                encoding="utf-8",
-            )
-            if challenge_obj.type == ChallengeType.WEB:
-                (challenge / RUN_SH).write_text(challenge_obj.gen_run_sh(), encoding="utf-8")
-                make_file_executable(challenge / RUN_SH)
-
-
-class Challenge:
-    """Represents a challenge object"""
-
-    __slots__ = [
-        "name",
-        "author",
-        "description",
-        "flag",
-        "type",
-        "deploy",
-        "ports",
-        "hidden",
-        "minPoints",
-        "maxPoints",
-        "tiebreakEligible",
-        "prereqs",
-        "tags",
-        "difficulty",
-        "auto",
-        "build",
-        "registry",
-        "root_domain",
-    ]
-    optional_fields = [
-        "ports",
-        "hidden",
-        "minPoints",
-        "maxPoints",
-        "tiebreakEligible",
-        "prereqs",
-        "tags",
-    ]
-
-    def __init__(
-        self,
-        name: str,
-        author: str,
-        description: str,
-        flag: str,
-        type: ChallengeType,
-        deploy: DeployType,
-        difficulty: ChallengeDifficulty,
-        auto: bool = False,
-        build: bool = False,
-    ) -> None:
-        self.name = name
-        self.author = author
-        self.description = description
-        self.flag = flag
-        self.type = type
-        self.deploy = deploy
-        self.ports = []
-        self.auto = auto
-        self.build = build and type in COMPILED_CHAL_TYPES and deploy != DeployType.NO_DEPLOY
-        self.hidden = None
-        self.minPoints = None
-        self.maxPoints = None
-        self.tiebreakEligible = None
-        self.prereqs = None
-        self.tags = None
-        self.difficulty = difficulty
-        self.registry = DOCKER_REGISTRY
-        self.root_domain = ROOT_DOMAIN
-
-    def to_json(self) -> dict:
-        """converts a challenge to its valid chal.json output"""
-        d: dict = {
-            "name": self.name,
-            "author": self.author,
-            "description": self.description,
-            "flag": self.flag,
-            "difficulty": self.difficulty.value,
-            "can_be_auto_deployed": self.auto,
-        }
-        for field in self.optional_fields:
-            val = getattr(self, field)
-            if isinstance(val, list) and len(val) > 0 or val is not None and not isinstance(val, list):
-                d[field] = val
-        return d
-
-    def gen_readme(self) -> str:
-        """Generates a README.md with instructions on how to setup the directory"""
-
-        ret = f"""# __{self.name}__ by __{self.author}__ \
-        \n## Directory Structure \
-        \n``` \
-        \n{self.name} \
-        """
-        if self.deploy == DeployType.KLODD:
-            ret += """\n ├── deploy \
-            \n │    └── Klodd deployment files \
-            """
-        ret += """\n ├── dist \
-        \n │    └── files to be given to competitors \
-        \n ├── solve \
-        \n │    └── writeup and solution scripts \
-        \n ├── src \
-        \n │    └── challenge source and container files \
-        \n ├── chall.json ── challenge information \
-        \n ├── README.md ── this file \
-        """
-        if self.build:
-            ret += """\n ├── build.sh ── builds src/chall"""
-        if self.deploy != DeployType.NO_DEPLOY:
-            ret += """\n └── dev.sh ── what you should use to test your challenge"""
-        ret += """\n```"""
-        ret += f"""\n## Quickstart to challenge development
-Make sure you develop your challenge on a new branch. You can create one with
-```bash
-git switch -c {self.name}_{self.author}
-```"""
-
-        if self.deploy != DeployType.NO_DEPLOY:
-            ret += f"""\n
-
-This setup is well-suited for pwn, reverse engineering, non instanced web challenges, and cryptography challenges requiring a hosted service.
-
-Delete the sample challenge before you start working.
-
-If your challenge allows Remote Code Execution (RCE), it must be sandboxed using either:
- - [nsjail](https://github.com/google/nsjail)
- - [redpwn jail](https://github.com/redpwn/jail).
-"""
-
-        if self.build:
-            ret += """\n### Build system (for pwn/rev challenges)
-The generated build system compiles your executable in a Docker container and places it at `src/chall`.
-The runtime `Dockerfile` uses this same executable when you test the challenge.
-
- - `./build.sh` explicitly builds the challenge.
- - `src/build.sh` contains the compilation steps run inside the builder image.
- - Normal `docker compose up --build` only uses an existing `src/chall`; it does not run the builder.
-"""
-            ret += " - `./dev.sh` runs the build script before starting the challenge.\n\n"
-        elif self.type in COMPILED_CHAL_TYPES and self.deploy != DeployType.NO_DEPLOY:
-            ret += """\n### Challenge executable
-This challenge was generated without `--build`. Add an executable at `src/chall` before building the runtime container.
-
-"""
-
-        if self.deploy == DeployType.KLODD:
-            ret += f"""\n### {self.name}/deploy
-The sample deploy folder contains
-- `challenge.yml`: Configuration file defining Klodd deployment settings.
-If you're new to Klodd, avoid modifying these files without checking with the CTF developers.
-"""
-
-        ret += f"""\n### {self.name}/dist
-Contains files distributed to competitors. If multiple files are included, bundle them into a ZIP archive.
-### {self.name}/solve
-Contains the challenge's writeup and solution scripts. A well-documented writeup is crucial for assessing challenge quality.
-### {self.name}/src
-Contains the challenge source files.
-"""
-        if self.deploy != DeployType.NO_DEPLOY:
-            ret += f"""
-If deployment is required, the `src` folder contains
- - `Dockerfile`: A basic setup for the challenge, accessible at port 1337.
- - `docker-compose.yml`: Defines deployment steps for the challenge.
-
-Run the challenge directly from this directory with:
-```bash
-docker compose up --build
-```
-
-            ### {self.name}/dev.sh
-**IMPORTANT**: Ensure the challenge can be fully deployed by running:
-```bash
-./dev.sh
-```
-"""
-        ret += """## Merging
-Once your challenge is complete, submit a **Pull Request (PR)**. The PR will be merged after a quality review on GitHub.
----
-This README was autogenerated by `mkchal.py`, but written by Neil (CygnusX). Suggestions are welcome.
-"""
-        return ret
-
-    def port(self) -> int:
-        """Return the configured container port or the template default."""
-        return self.ports[0] if self.ports else 1337
-
-    def gen_dockerfile(self) -> str:
-        """Generates a sample Dockerfile"""
-
-        kwargs = {"name": ChallengeUtils.safe_name(self.name), "port": self.port()}
-        if self.type in COMPILED_CHAL_TYPES:
-            return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / DOCKERFILE, kwargs)
-        if self.type == ChallengeType.WEB:
-            return ChallengeUtils.generate_file_content(TEMPLATES_DIR / self.type.value / DOCKERFILE, kwargs)
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / DOCKERFILE, kwargs)
-
-    def gen_docker_compose(self) -> str:
-        """Generates a sample docker-compose.yml"""
-        safe_name = ChallengeUtils.safe_name(self.name)
-        kwargs = {
-            "name": safe_name,
-            "hash": ChallengeUtils.generate_service_name(safe_name),
-            "port": self.port(),
-            "privileged": (
-                "        privileged: true # needed for redpwn jail to work\n"
-                if self.type in COMPILED_CHAL_TYPES
-                else ""
-            ),
-            "build_services": self.gen_compose_build_services(),
-        }
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / COMPOSE, kwargs)
-
-    def gen_compose_build_services(self) -> str:
-        if not self.build:
-            return ""
-
-        safe_name = ChallengeUtils.safe_name(self.name)
-        kwargs = {"hash": ChallengeUtils.generate_service_name(safe_name)}
-        return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / "compose-build-services.yml", kwargs)
-
-    def gen_sample(self) -> str:
-        """Generates the sample challenge file"""
-
-        kwargs = {"name": self.name, "port": self.port()}
-        if self.type == ChallengeType.WEB:
-            return ChallengeUtils.generate_file_content(
-                TEMPLATES_DIR / self.type.value / SAMPLE_PY,
-                kwargs,
-            )
-        if self.type in COMPILED_CHAL_TYPES:
-            return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / SAMPLE_C, kwargs)
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / SAMPLE_PY, kwargs)
-
-    def gen_klodd_challenge(self) -> str:
-        """Generates a sample challenge.yml"""
-        safe_name = ChallengeUtils.safe_name(self.name)
-        kwargs = {
-            "unsafe_name": self.name,
-            "name": safe_name,
-            "port": self.port(),
-            "image": f"{self.registry}/{safe_name}",
-        }
-        if self.type == ChallengeType.WEB:
-            return ChallengeUtils.generate_file_content(TEMPLATES_DIR / self.type.value / KLODD_YAML, kwargs)
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / KLODD_YAML, kwargs)
-
-    def gen_build_script(self) -> str:
-        """Generates the host-side build script for compiled challenges."""
-        assert self.build
-        return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / HOST_BUILD_TEMPLATE, {})
-
-    def gen_source_build_script(self) -> str:
-        """Generates the build script executed inside the builder image."""
-        assert self.build
-        return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / BUILD_SH, {})
-
-    def gen_dockerfile_build(self) -> str:
-        """Generates Dockerfile_build for compiled challenges."""
-        assert self.build
-        return ChallengeUtils.generate_file_content(PWN_TEMPLATE_DIR / DOCKERFILE_BUILD, {})
-
-    def gen_run_sh(self):
-        assert self.type == ChallengeType.WEB and self.deploy == DeployType.KLODD
-
-        safe_name = ChallengeUtils.safe_name(self.name)
-        kwargs = {
-            "name": safe_name,
-            "registry": self.registry,
-        }
-
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / self.type.value / "klodd" / RUN_SH, kwargs)
-
-    def gen_dev_sh(self):
-        safe_name = ChallengeUtils.safe_name(self.name)
-        kwargs = {
-            "name": safe_name,
-            "local_command": (
-                "curl http://localhost:1337" if self.type == ChallengeType.WEB else "ncat localhost 1337"
-            ),
-        }
-        return ChallengeUtils.generate_file_content(TEMPLATES_DIR / DEV_SH, kwargs)
-
-    def create(self) -> bool:
-        """Creates the challenge structure for a challenge"""
-        return ChallengeUtils.generate(self)
-
-    def __repr__(self) -> str:
-        return dumps(self.to_json(), indent=4)
-
-
-if __name__ == "__main__":
-    print()
+def main() -> None:
     try:
-        loaded_challs = ChallengeUtils.load_challenges()
-    except Exception as e:
-        print(e)
-        print("Error: " + "Challenge repo is malformed")
-        exit()
+        loaded_challenges = load_challenges()
+    except (OSError, msgspec.DecodeError) as error:
+        print(error)
+        print("Error: Challenge repo is malformed")
+        return
+
     parser = argparse.ArgumentParser(prog="mkchal", description="Creates a sample challenge for a ctf")
-
-    parser.add_argument("--name", type=str, required=True, help="The name of the challenge.")
-
-    parser.add_argument(
-        "--desc", type=str, required=False, help="The description of the challenge.", default="example description"
-    )
-
-    parser.add_argument("--author", type=str, required=True, help="The author of the challenge.")
-
-    parser.add_argument("--flag", type=str, required=False, help="The challenge flag.", default="bctf{fake_flag}")
-
+    parser.add_argument("--name", required=True, help="The name of the challenge.")
+    parser.add_argument("--desc", default="example description", help="The description of the challenge.")
+    parser.add_argument("--author", required=True, help="The author of the challenge.")
+    parser.add_argument("--flag", default="bctf{fake_flag}", help="The challenge flag.")
     parser.add_argument(
         "--type",
-        type=ChallengeType,
+        type=Category,
         required=True,
-        choices=[c.value for c in ChallengeType],
+        choices=Category,
         help="The type of the challenge.",
     )
-
     parser.add_argument(
         "--deploy",
         type=DeployType,
         required=True,
-        choices=[c.value for c in DeployType],
+        choices=DeployType,
         help="How the challenge will be deployed",
     )
-
+    parser.add_argument("--ports", type=int, help="The ports that the challenge runs on inside the container.")
     parser.add_argument(
-        "--ports",
-        type=int,
-        required=False,
-        help="The ports that the challenge runs on inside the container.",
-    )
-
-    parser.add_argument(
-        "--autodeploy",
-        type=bool,
-        required=True,
-        choices=[False, True].copy(),
+        "--no-autodeploy",
+        default=True,
+        action=argparse.BooleanOptionalAction,
         help="Whether or not the challenge can be automatically deployed.",
     )
-
     parser.add_argument(
         "--difficulty",
         type=ChallengeDifficulty,
         required=True,
-        choices=[c.value for c in ChallengeDifficulty],
+        choices=ChallengeDifficulty,
         help="The challenge difficulty.",
     )
-
     parser.add_argument(
         "--build",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         help="Generate the opt-in container build system for deployed pwn and rev challenges.",
     )
-
     args = parser.parse_args()
 
-    build_enabled = resolve_build_option(args.type, args.deploy, args.build)
+    build = resolve_build_option(args.type, args.deploy, args.build)
+    ports = [args.ports] if args.ports else [1337] if args.deploy != DeployType.NO_DEPLOY else []
 
-    c = Challenge(
-        ChallengeUtils.safe_name(args.name),
-        args.author,
-        args.desc,
-        args.flag,
-        args.type,
-        args.deploy,
-        args.difficulty,
-        args.autodeploy,
-        build_enabled,
+    challenge = Challenge(
+        name=safe_name(args.name),
+        author=args.author,
+        description=args.desc,
+        flag=args.flag,
+        difficulty=args.difficulty,
+        autodeploy=args.autodeploy,
+        ports=ports,
+    )
+    project = ChallengeProject(
+        challenge=challenge,
+        category=args.type,
+        deploy=args.deploy,
+        build=build,
     )
 
-    if args.ports:
-        c.ports = [args.ports]
-    elif args.deploy != DeployType.NO_DEPLOY:
-        c.ports = [1337]
+    project.check_name_available(loaded_challenges)
 
-    conflict, reason = ChallengeUtils.validate_name(c)
-    if not conflict:
-        print("Error: " + reason)
-        exit()
+    project.create()
 
-    conflict = ChallengeUtils.validate_flag(c.flag)
-    if not conflict:
-        print("Error: " + r"Flag does not match ^bctf\{.*\}$")
-        exit()
+    print(f"Done. Run `git switch -c {challenge.name}_{challenge.author}` to switch to a branch and start working.")
 
-    conflict = ChallengeUtils.generate(c)
-    if conflict:
-        print(f"Done. Run `git switch -c {c.name}_{c.author}` to switch to a branch and start working.")
-    else:
-        print("Error: Failed to create challenge.")
+
+if __name__ == "__main__":
+    main()

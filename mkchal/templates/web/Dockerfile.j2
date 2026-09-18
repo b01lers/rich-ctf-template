@@ -6,7 +6,7 @@ FROM python:3.13-slim-bookworm
 
 RUN python3 -m pip install Flask
 
-ENV USER={name}
+ENV USER={{ project.safe_name }}
 WORKDIR /home/$USER
 RUN useradd $USER
 
@@ -27,6 +27,6 @@ RUN chmod -x /home/$USER/flag.txt
 # Whatever port you configure in your web server
 # PROBABLY this should stay 1337. Just change
 # The passthrough port in docker-compose.yml below.
-EXPOSE {port}
+EXPOSE {{ project.port }}
 
 CMD ["python3", "sample.py"]

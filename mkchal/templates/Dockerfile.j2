@@ -7,7 +7,7 @@ FROM python:3.13-slim-bookworm
 RUN apt-get update && \
 	apt-get install -y socat
 
-ENV USER={name}
+ENV USER={{ project.safe_name }}
 WORKDIR /home/$USER
 RUN useradd $USER
 
@@ -26,7 +26,7 @@ RUN chmod -R 550 /home/$USER
 RUN chmod -x /home/$USER/flag.txt
 
 # Whatever port you configure in the socat command
-EXPOSE {port}
+EXPOSE {{ project.port }}
 
 # Serve the challenge
-CMD socat TCP-LISTEN:{port},reuseaddr,fork EXEC:"python3 sample.py"
+CMD socat TCP-LISTEN:{{ project.port }},reuseaddr,fork EXEC:"python3 sample.py"

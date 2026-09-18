@@ -1,6 +1,6 @@
     base:
         profiles: ["build"]
-        image: {hash}-base
+        image: {{ project.safe_name }}-base
         build:
             context: .
             dockerfile: Dockerfile
@@ -8,7 +8,7 @@
 
     builder:
         profiles: ["build"]
-        image: {hash}-builder
+        image: {{ project.safe_name }}-builder
         build:
             context: .
             dockerfile: Dockerfile_build

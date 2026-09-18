@@ -8,4 +8,4 @@ WORKDIR /build
 COPY . /build/
 RUN ./build.sh && chmod 555 chall
 
-CMD ["/bin/sh", "-c", "cp /build/chall /out/.chall.tmp && mv /out/.chall.tmp /out/chall"]
+CMD ["/bin/sh", "-c", "cp --remove-destination /build/chall /out/chall"]
