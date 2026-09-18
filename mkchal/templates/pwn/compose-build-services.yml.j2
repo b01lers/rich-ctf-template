@@ -11,6 +11,6 @@
         image: {{ project.safe_name }}-builder
         build:
             context: .
-            dockerfile: Dockerfile_build
+            dockerfile: build.Dockerfile
             additional_contexts:
                 base_image: "service:base"

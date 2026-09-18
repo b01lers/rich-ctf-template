@@ -6,6 +6,6 @@ set -eu
 
 cd -- "$(dirname -- "$0")"
 
-# By default, Dockerfile_build copies `chall` out to dist
+# By default, build.Dockerfile copies `chall` out to dist
 # If multiple build files are desired, copy those as well
 gcc sample.c -o challgcc sample.c -o chall

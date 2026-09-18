@@ -16,8 +16,8 @@ import warnings
 from enum import Enum
 from pathlib import Path
 
+import jinja2
 import msgspec
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 ROOT_DOMAIN = os.getenv("ROOT_DOMAIN", "b01le.rs")
 DOCKER_REGISTRY = "localhost:5000"
@@ -31,11 +31,13 @@ CONTEXT = Path(__file__).resolve().parent.parent
 SRC_DIR = CONTEXT / SRC
 TEMPLATES_DIR = CONTEXT / "mkchal" / "templates"
 
-TEMPLATE_ENV = Environment(
-    loader=FileSystemLoader(TEMPLATES_DIR),
-    undefined=StrictUndefined,
+TEMPLATE_ENV = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(TEMPLATES_DIR),
+    undefined=jinja2.StrictUndefined,
     autoescape=False,
     keep_trailing_newline=True,
+    trim_blocks=True,
+    lstrip_blocks=True,
 )
 
 
@@ -175,7 +177,7 @@ class ChallengeProject(msgspec.Struct, kw_only=True):
                 (
                     GeneratedFile(Path("pwn/host/build.sh.j2"), Path(), executable=True),
                     GeneratedFile(Path("pwn/build.sh.j2"), SRC, executable=True),
-                    GeneratedFile(Path("pwn/Dockerfile_build.j2"), SRC),
+                    GeneratedFile(Path("pwn/build.Dockerfile.j2"), SRC),
                 )
             )
         if klodd:
@@ -284,7 +286,7 @@ def main() -> None:
     )
     parser.add_argument("--ports", type=int, help="The ports that the challenge runs on inside the container.")
     parser.add_argument(
-        "--no-autodeploy",
+        "--autodeploy",
         default=True,
         action=argparse.BooleanOptionalAction,
         help="Whether or not the challenge can be automatically deployed.",
