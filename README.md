@@ -1,13 +1,13 @@
 # ctf-name-here
 Made with the Rich CTF template
 
-### Run mkchal.py
+### Run mkchal
 
 ```bash
-$ python3 mkchal/mkchal.py -h
+$ uv run --project scripts mkchal -h
 
 usage: mkchal [-h] --name NAME [--desc DESC] --author AUTHOR [--flag FLAG] --type {rev,pwn,crypto,web,misc,blockchain,osint,jail} --deploy {docker,klodd,none} [--ports PORTS] --autodeploy {False,True}
-              --difficulty {easy,medium,hard,impossible} [--build]
+              --difficulty {easy,medium,hard,impossible} [--build] [--dist]
 
 Creates a sample challenge for a ctf
 
@@ -27,11 +27,12 @@ options:
   --difficulty {easy,medium,hard,impossible}
                         The challenge difficulty.
   --build               Generate the opt-in container build system for deployed pwn and rev challenges.
+  --dist                Add distribution configuration to chal.json.
 ```
 
 > This will create a new challenge directory with the required files.
 
-### After mkchal.py
+### After mkchal
 
 - A sample challenge will be created inside your challenge directory accessible at port 1337.
 - Please read the generated README.md in your challenge for more information.
@@ -41,6 +42,17 @@ options:
     ```
 - Read the `README.md` inside your created challenge directory
 - For deployed pwn/rev challenges generated with `--build`, run `./build.sh` to create `src/chall`.
+
+### Create competitor distributions (optional)
+
+Pass `--dist` to add a `distribution` configuration to `chal.json` that lets you configure the `make_dist` script.
+Run `uv run --project scripts make-dist src/<category>/<challenge>` from the project root to generate the distribution files.
+
+- `build.sh` is automatically run before generating the distribution files.
+- `distributions.files` specifies the files included/excluded in the `dist`. It follows a similar format to `.gitignore`, i.e.
+`*` or `**` globs, `!` to exclude. 
+- The flag specified in `chal.json` is automatically replaced with `bctf{fake_flag}` in text files. 
+- The `docker-compose.yml` is rewritten to only include the challenge service. 
 
 ### After verifying your challenge works
  - Push your changes and make a pull request to the CTF repo.
@@ -74,7 +86,7 @@ challenge_category
     │    ├── Dockerfile
     │    └── docker-compose.yml
     ├── build.sh ── optional pwn/rev build script
-    ├── chall.json ── challenge information
+    ├── chal.json ── challenge information
     ├── README.md ── this file
     └── dev.sh ── what you should use to test your challenge
 ```

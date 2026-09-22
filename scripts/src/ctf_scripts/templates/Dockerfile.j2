@@ -11,10 +11,10 @@ ENV USER={{ project.safe_name }}
 WORKDIR /home/$USER
 RUN useradd $USER
 
-# This example runs a python script named sample.py
+# This example runs a python script named chall.py
 # This works with compiled binaries, just make sure to
 # install necessary software and use a Makefile inside the container.
-COPY sample.py /home/$USER/
+COPY chall.py /home/$USER/
 
 # We don't want to forget the flag!
 COPY flag.txt /home/$USER/flag.txt
@@ -29,4 +29,4 @@ RUN chmod -x /home/$USER/flag.txt
 EXPOSE {{ project.port }}
 
 # Serve the challenge
-CMD socat TCP-LISTEN:{{ project.port }},reuseaddr,fork EXEC:"python3 sample.py"
+CMD socat TCP-LISTEN:{{ project.port }},reuseaddr,fork EXEC:"python3 chall.py"
