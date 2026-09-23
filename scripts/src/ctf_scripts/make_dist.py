@@ -2,26 +2,16 @@
 import argparse
 import shutil
 import subprocess
-import sys
 import warnings
+from io import StringIO
 from pathlib import Path
 
 import msgspec
+from ruamel.yaml import YAML
 
 from .common import Challenge, ComposeConfig
 
 FAKE_FLAG = b"bctf{fake_flag}"
-
-
-class DockerCompose(msgspec.Struct, kw_only=True, omit_defaults=True, forbid_unknown_fields=True):
-    name: str | None = None
-    version: str | float | None = None
-    include: object = None
-    services: dict[str, dict[str, object]]
-    networks: dict[str, object] | None = None
-    volumes: dict[str, object] | None = None
-    configs: dict[str, object] | None = None
-    secrets: dict[str, object] | None = None
 
 
 def matching_files(root: Path, pattern: str) -> set[Path]:
@@ -83,14 +73,25 @@ def copy_file(source: Path, destination: Path, real_flag: bytes) -> None:
 
 def render_compose(challenge: Path, settings: ComposeConfig) -> str:
     source = challenge / settings.file
-    document = msgspec.yaml.decode(source.read_bytes(), type=DockerCompose)
-    missing = set(settings.services) - document.services.keys()
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    compose = yaml.load(source)
+    if not isinstance(compose, dict):
+        raise TypeError(f"{settings.file} must contain a mapping")
+    services = compose.get("services")
+    if not isinstance(services, dict):
+        raise TypeError(f"{settings.file} must contain a services mapping")
+
+    missing = set(settings.services) - services.keys()
     if missing:
         raise ValueError(f"services not found in {settings.file}: {', '.join(sorted(missing))}")
-    for name in list(document.services):
+    for name in list(services):
         if name not in settings.services:
-            del document.services[name]
-    return msgspec.yaml.encode(document).decode()
+            del services[name]
+
+    output = StringIO()
+    yaml.dump(compose, output)
+    return output.getvalue()
 
 
 def make_distribution(challenge: Path) -> None:

@@ -4,8 +4,9 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "jinja2>=3.1.6",
-    "msgspec[yaml]>=0.21.1",
+    "msgspec>=0.21.1",
     "rich>=15.0.0",
+    "ruamel-yaml>=0.18.15",
 ]
 
 [project.scripts]

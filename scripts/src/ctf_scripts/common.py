@@ -40,7 +40,7 @@ class DeployType(Enum):
     NO_DEPLOY = "none"
 
 
-class ComposeConfig(msgspec.Struct, forbid_unknown_fields=True):
+class ComposeConfig(msgspec.Struct, frozen=True, forbid_unknown_fields=True):
     services: list[str]
     file: str = "src/docker-compose.yml"
 
@@ -53,7 +53,7 @@ class ComposeConfig(msgspec.Struct, forbid_unknown_fields=True):
             raise ValueError("distribution.compose.services contains duplicates")
 
 
-class DistConfig(msgspec.Struct, forbid_unknown_fields=True):
+class DistConfig(msgspec.Struct, frozen=True, forbid_unknown_fields=True):
     files: list[str]
     compose: ComposeConfig | None = None
 

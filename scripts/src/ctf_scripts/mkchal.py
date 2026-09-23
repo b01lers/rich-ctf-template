@@ -56,7 +56,7 @@ class GeneratedFile(msgspec.Struct, frozen=True):
         return self.target_directory / self.source.name.removesuffix(".j2")
 
 
-class ChallengeProject(msgspec.Struct, kw_only=True):
+class ChallengeProject(msgspec.Struct, frozen=True, kw_only=True):
     """A challenge together with the options used to generate its project."""
 
     challenge: Challenge
