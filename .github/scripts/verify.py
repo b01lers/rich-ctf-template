@@ -1,5 +1,5 @@
-from pathlib import Path 
-from json import loads, JSONDecodeError
+from json import JSONDecodeError, loads
+from pathlib import Path
 
 violations = 0
 
@@ -18,7 +18,7 @@ for dir in context_dir.iterdir():
                 print(f"** {violations} Could not find chal.json inside challenge {dir.name}/{challenge.name}")
             except (JSONDecodeError, KeyError) as e:
                 violations += 1
-                print(f"** {violations} malformed chall.json inside challenge {dir.name}/{challenge.name}")
+                print(f"** {violations} malformed chal.json inside challenge {dir.name}/{challenge.name}")
 
 if violations > 0:
     exit(1)
