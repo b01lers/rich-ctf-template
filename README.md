@@ -1,6 +1,8 @@
 # ctf-name-here
 Made with the Rich CTF template
 
+## Writing a challenge
+
 ### Run mkchal
 
 ```bash
@@ -50,9 +52,9 @@ Run `uv run --project scripts make-dist src/<category>/<challenge>` from the pro
 
 - `build.sh` is automatically run before generating the distribution files.
 - `distributions.files` specifies the files included/excluded in the `dist`. It follows a similar format to `.gitignore`, i.e.
-`*` or `**` globs, `!` to exclude. 
-- The flag specified in `chal.json` is automatically replaced with `bctf{fake_flag}` in text files. 
-- The `docker-compose.yml` is rewritten to only include the challenge service. 
+`*` or `**` globs, `!` to exclude.
+- The flag specified in `chal.json` is automatically replaced with `bctf{fake_flag}` in text files.
+- The `docker-compose.yml` is rewritten to only include the challenge service.
 
 ### After verifying your challenge works
  - Push your changes and make a pull request to the CTF repo.

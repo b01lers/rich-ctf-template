@@ -6,4 +6,8 @@ __pycache__
 venv
 .venv
 
+.next
+node_modules
+
+.DS_Store
 *.swp

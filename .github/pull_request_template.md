@@ -5,13 +5,12 @@ Checklist For PRs:
 - [ ] Writeup is present in `solve/README.md`
 - [ ] Writeup is high quality and completely explains how to solve the challenge from scratch
 - [ ] `chal.json` is present in the challenge root directory and contains:
-  - [ ] Challenge Title
-  - [ ] Challenge Author
-  - [ ] Challenge Difficulty `[Easy, Medium, Hard]`
-  - [ ] Challenge Description (for distribution, this is your flavor text)
-- [ ] Local build files are present in `./src` if applicable (Makefile etc)
-- [ ] Remote deployment files are present in `./deploy` if applicable.
+  - [ ] Challenge title
+  - [ ] Challenge author
+  - [ ] Challenge difficulty `[easy, medium, hard]`
+  - [ ] Challenge description (for distribution, this is your flavor text)
+- [ ] Local build files are present in `./src` if applicable.
   - [ ] Dockerfile
   - [ ] docker-compose.yml
-  - [ ] run.sh
+- [ ] Remote deployment files are present in `./deploy` if applicable.
   - [ ] challenge.yml
