@@ -9,7 +9,7 @@ Made with the Rich CTF template
 $ uv run --project scripts mkchal -h
 
 usage: mkchal [-h] --name NAME [--desc DESC] --author AUTHOR [--flag FLAG] --type {rev,pwn,crypto,web,misc,blockchain,osint,jail} --deploy {docker,klodd,none} [--ports PORTS]
-              [--autodeploy | --no-autodeploy] --difficulty {easy,medium,hard,impossible} [--build | --no-build] [--dist]
+              --difficulty {easy,medium,hard,impossible} [--build | --no-build] [--dist]
 
 Creates a sample challenge for a ctf
 
@@ -24,8 +24,6 @@ options:
   --deploy {docker,klodd,none}
                         How the challenge will be deployed
   --ports PORTS         The ports that the challenge runs on inside the container.
-  --autodeploy, --no-autodeploy
-                        Whether or not the challenge can be automatically deployed.
   --difficulty {easy,medium,hard,impossible}
                         The challenge difficulty.
   --build, --no-build   Generate the opt-in container build system for deployed pwn and rev challenges.

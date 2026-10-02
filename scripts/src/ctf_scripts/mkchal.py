@@ -248,7 +248,6 @@ class Arguments(argparse.Namespace):
     challenge_type: Category
     deploy: DeployType
     ports: int | None
-    autodeploy: bool
     difficulty: ChallengeDifficulty
     build: bool
     distribution: bool
@@ -283,12 +282,6 @@ def main() -> None:
         help="How the challenge will be deployed",
     )
     parser.add_argument("--ports", type=int, help="The ports that the challenge runs on inside the container.")
-    parser.add_argument(
-        "--autodeploy",
-        default=True,
-        action=argparse.BooleanOptionalAction,
-        help="Whether or not the challenge can be automatically deployed.",
-    )
     parser.add_argument(
         "--difficulty",
         type=ChallengeDifficulty,
@@ -329,7 +322,6 @@ def main() -> None:
         description=args.desc,
         flag=args.flag,
         difficulty=args.difficulty,
-        autodeploy=args.autodeploy,
         ports=ports,
         distribution=distribution,
     )

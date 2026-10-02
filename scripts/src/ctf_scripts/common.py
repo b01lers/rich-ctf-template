@@ -70,7 +70,6 @@ class Challenge(msgspec.Struct, kw_only=True, omit_defaults=True, frozen=True):
     description: str
     flag: str
     difficulty: ChallengeDifficulty
-    autodeploy: bool
     ports: list[int] = msgspec.field(default_factory=list)
     distribution: DistConfig | None = None
     hidden: bool | None = None
